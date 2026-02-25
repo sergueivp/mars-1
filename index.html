@@ -1685,6 +1685,7 @@
       const state = {
         appStarted: false,
         currentStep: 2,
+        submissionTimestamp: null,
         unitId: "",
         personal: {
           fullName: "",
@@ -2907,6 +2908,8 @@
           return;
         }
         renderSubmissionErrors([]);
+        state.submissionTimestamp = Date.now();
+        saveState();
 
         submissionOverlay.classList.add("active");
         hideTimerDuringSubmission(true);
@@ -2987,8 +2990,7 @@
 
         await wait(3000);
 
-        const now = new Date();
-        const dateString = now.toLocaleString();
+        const dateString = formatSubmissionTimestamp(state.submissionTimestamp);
         const name = state.personal.fullName || "UNSPECIFIED CANDIDATE";
         const spec = state.personal.specialisation || "UNSPECIFIED";
         const unit = state.unitId || "UNIT-UNKNOWN";
@@ -3068,6 +3070,19 @@ Your colony is counting on you.
         return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
       }
 
+      function formatSubmissionTimestamp(ts) {
+        const numericTs = Number(ts);
+        const date = Number.isFinite(numericTs) && numericTs > 0 ? new Date(numericTs) : new Date();
+        return date.toLocaleString(undefined, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      }
+
       async function generateDocx() {
         const ready = await ensureDocxLibrary();
         if (!ready || !window.docx) {
@@ -3079,6 +3094,7 @@ Your colony is counting on you.
         const p = state.personal;
         const summaryText = (state.summary || "").trim();
         const softSkillsAll = [...state.softSkills, ...(state.customSoftSkill.trim() ? [state.customSoftSkill.trim()] : [])];
+        const submissionStamp = state.submissionTimestamp ? formatSubmissionTimestamp(state.submissionTimestamp) : "";
         const bodyLineSpacing = 276;
         const bodyAfter = 80;
 
@@ -3162,6 +3178,18 @@ Your colony is counting on you.
           },
           spacing: { after: 200 }
         }));
+
+        if (submissionStamp) {
+          children.push(new Paragraph({
+            children: [new TextRun({
+              text: `Submission timestamp: ${submissionStamp}`,
+              font: "Calibri",
+              size: 18,
+              color: "666666"
+            })],
+            spacing: { after: 120 }
+          }));
+        }
 
         if (summaryText) {
           addSectionHeading("PROFILE STATEMENT");
