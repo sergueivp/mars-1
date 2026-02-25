@@ -260,6 +260,7 @@
       display: grid;
       place-items: center;
       flex-shrink: 0;
+      overflow: visible;
     }
 
     .mars-logo {
@@ -301,53 +302,45 @@
       pointer-events: none;
     }
 
-    .mars-satellite {
+    .mars-wave {
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 0;
-      height: 0;
-      pointer-events: none;
-      transform: translate(0, 0);
-      z-index: 3;
-    }
-
-    .mars-satellite .satellite-core {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 8px;
-      height: 8px;
+      width: 74px;
+      height: 74px;
       border-radius: 50%;
-      background: #9fe5ff;
-      border: 1px solid rgba(14, 165, 233, 0.85);
-      box-shadow: 0 0 10px rgba(14, 165, 233, 0.95), 0 0 22px rgba(14, 165, 233, 0.55);
-      transform: translate(-50%, -50%);
-      animation: satelliteBlink 1.2s ease-in-out infinite;
+      border: 1px solid rgba(14, 165, 233, 0.55);
+      box-shadow: 0 0 10px rgba(14, 165, 233, 0.28);
+      transform: translate(-50%, -50%) scale(0.78);
+      transform-origin: center;
+      opacity: 0;
+      pointer-events: none;
+      animation: marsRadioWave 3.2s ease-out infinite;
+      z-index: 0;
     }
 
-    .mars-satellite .satellite-trail {
-      position: absolute;
-      left: -24px;
-      top: -1px;
-      width: 24px;
-      height: 2px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(14, 165, 233, 0), rgba(14, 165, 233, 0.7));
-      filter: blur(0.5px);
-      opacity: 0.9;
-      transform-origin: right center;
-      animation: satelliteTrailFade 1.2s ease-in-out infinite;
+    .mars-wave.wave-2 {
+      animation-delay: 1.06s;
     }
 
-    @keyframes satelliteBlink {
-      0%, 100% { opacity: 0.45; transform: translate(-50%, -50%) scale(0.92); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+    .mars-wave.wave-3 {
+      animation-delay: 2.12s;
     }
 
-    @keyframes satelliteTrailFade {
-      0%, 100% { opacity: 0.35; width: 18px; left: -18px; }
-      50% { opacity: 0.9; width: 28px; left: -28px; }
+    @keyframes marsRadioWave {
+      0% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(0.78);
+        border-color: rgba(14, 165, 233, 0.58);
+      }
+      60% {
+        opacity: 0.25;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.44);
+        border-color: rgba(14, 165, 233, 0.02);
+      }
     }
 
     .mars-label {
@@ -1540,11 +1533,10 @@
         <aside class="right-rail" aria-label="Status and preview">
           <div class="mars-card" aria-label="MARS-1 rotating insignia">
             <div class="mars-orbit-wrap" aria-hidden="true">
+              <span class="mars-wave wave-1"></span>
+              <span class="mars-wave wave-2"></span>
+              <span class="mars-wave wave-3"></span>
               <div class="mars-logo"></div>
-              <div id="marsSatellite" class="mars-satellite">
-                <span class="satellite-trail"></span>
-                <span class="satellite-core"></span>
-              </div>
             </div>
             <div class="mars-label"><strong>MARS-1</strong>Orbital Relay Signal<br>Active</div>
           </div>
@@ -1637,7 +1629,6 @@
       let typewriterInterval = null;
       let introCountdownInterval = null;
       let docxReadyPromise = null;
-      let satelliteOrbitRAF = null;
       let currentStep = 2;
 
       const state = {
@@ -2769,64 +2760,6 @@
         return docxReadyPromise;
       }
 
-      function initMarsSatelliteOrbit() {
-        const satellite = document.getElementById("marsSatellite");
-        if (!satellite || satellite.dataset.orbitInit === "1") return;
-        satellite.dataset.orbitInit = "1";
-
-        const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (prefersReducedMotion) {
-          satellite.style.transform = "translate(44px, 0px)";
-          return;
-        }
-
-        const twoPi = Math.PI * 2;
-        let theta = Math.random() * twoPi;
-        let lastTs = performance.now();
-
-        const randomOrbit = () => ({
-          radiusX: 42 + Math.random() * 14,
-          radiusY: 30 + Math.random() * 14,
-          tilt: Math.random() * twoPi,
-          durationMs: 4200 + Math.random() * 4200
-        });
-
-        let orbit = randomOrbit();
-
-        const tick = (ts) => {
-          const dt = Math.max(8, Math.min(40, ts - lastTs || 16));
-          lastTs = ts;
-          theta += (twoPi / orbit.durationMs) * dt;
-
-          if (theta >= twoPi) {
-            theta -= twoPi;
-            orbit = randomOrbit();
-          }
-
-          const cosTheta = Math.cos(theta);
-          const sinTheta = Math.sin(theta);
-          const x = orbit.radiusX * cosTheta;
-          const y = orbit.radiusY * sinTheta;
-          const cosTilt = Math.cos(orbit.tilt);
-          const sinTilt = Math.sin(orbit.tilt);
-
-          const px = x * cosTilt - y * sinTilt;
-          const py = x * sinTilt + y * cosTilt;
-
-          const dx = -orbit.radiusX * sinTheta;
-          const dy = orbit.radiusY * cosTheta;
-          const dpx = dx * cosTilt - dy * sinTilt;
-          const dpy = dx * sinTilt + dy * cosTilt;
-          const tangentDeg = (Math.atan2(dpy, dpx) * 180) / Math.PI;
-
-          satellite.style.transform = `translate(${px.toFixed(2)}px, ${py.toFixed(2)}px) rotate(${tangentDeg.toFixed(2)}deg)`;
-          satelliteOrbitRAF = requestAnimationFrame(tick);
-        };
-
-        if (satelliteOrbitRAF) cancelAnimationFrame(satelliteOrbitRAF);
-        satelliteOrbitRAF = requestAnimationFrame(tick);
-      }
-
       async function cycleStatus(el, messages, intervalMs, totalMs) {
         const started = Date.now();
         let i = 0;
@@ -3389,7 +3322,6 @@ Your colony is counting on you.
         typewriterIntro();
         startIntroCountdown();
         ensureDocxLibrary();
-        initMarsSatelliteOrbit();
 
         updateCompleteness();
         renderPreview();
