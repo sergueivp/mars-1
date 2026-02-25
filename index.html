@@ -1215,6 +1215,19 @@
       line-height: 1.45;
     }
 
+    .terminal.typing::after {
+      content: "█";
+      display: inline-block;
+      margin-left: 2px;
+      color: #9cf5bc;
+      animation: terminalCursorBlink 0.9s steps(1, end) infinite;
+    }
+
+    @keyframes terminalCursorBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
     .final-actions {
       margin-top: 16px;
       display: flex;
@@ -2797,33 +2810,42 @@
       }
 
       async function typeHqResponse(terminal, text) {
-        let i = 0;
-        let charsUntilPause = 40 + Math.floor(Math.random() * 20);
-        while (i < text.length) {
-          const char = text[i];
-          const chunkSize = char === "\n" ? 1 : Math.min(text.length - i, 1 + Math.floor(Math.random() * 3));
-          i += chunkSize;
-          terminal.textContent = text.slice(0, i);
-          terminal.scrollTop = terminal.scrollHeight;
+        terminal.classList.add("typing");
+        terminal.textContent = "";
 
-          const printed = terminal.textContent;
-          const prev = printed.slice(-2);
-          const last = printed.slice(-1);
-          let delay = 58 + Math.random() * 70;
-          if (last === ",") delay += 220 + Math.random() * 120;
-          else if (last === ":" || last === ";") delay += 300 + Math.random() * 180;
-          else if (last === "." || last === "!" || last === "?") delay += 500 + Math.random() * 280;
-          else if (last === "\n") delay += 170 + Math.random() * 120;
-          if (prev === "\n\n") delay += 650 + Math.random() * 280;
+        const sections = text
+          .split(/\n{2,}/)
+          .map((s) => s.replace(/\s+$/, ""))
+          .filter(Boolean);
 
-          charsUntilPause -= chunkSize;
-          if (charsUntilPause <= 0 && i < text.length) {
-            delay += 700 + Math.random() * 1000;
-            charsUntilPause = 32 + Math.floor(Math.random() * 24);
+        for (let s = 0; s < sections.length; s++) {
+          if (s > 0) terminal.textContent += "\n\n";
+
+          const lines = sections[s].split("\n");
+          for (let l = 0; l < lines.length; l++) {
+            const line = lines[l];
+            const tokens = line.match(/\S+\s*/g) || [line];
+
+            for (const token of tokens) {
+              terminal.textContent += token;
+              terminal.scrollTop = terminal.scrollHeight;
+              await wait(34 + Math.random() * 18);
+            }
+
+            if (l < lines.length - 1) {
+              terminal.textContent += "\n";
+              terminal.scrollTop = terminal.scrollHeight;
+              await wait(80 + Math.random() * 70);
+            }
           }
 
-          await wait(delay);
+          terminal.scrollTop = terminal.scrollHeight;
+          if (s < sections.length - 1) {
+            await wait(740 + Math.random() * 420);
+          }
         }
+
+        terminal.classList.remove("typing");
       }
 
       function ensureDocxLibrary() {
