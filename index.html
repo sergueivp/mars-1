@@ -260,6 +260,8 @@
       display: grid;
       place-items: center;
       flex-shrink: 0;
+      overflow: visible;
+      perspective: 400px;
     }
 
     .mars-logo {
@@ -308,46 +310,99 @@
       width: 0;
       height: 0;
       pointer-events: none;
-      transform: translate(0, 0);
+      transform: translate(0, 0) rotate(0deg) scale(var(--sat-scale, 1));
+      opacity: var(--sat-opacity, 1);
       z-index: 3;
+      --trail-length: 26px;
+      --trail-alpha: 0.85;
+      --sat-shadow: 0 0 10px rgba(14, 165, 233, 0.7);
+      transition: opacity 120ms linear;
+      transform-style: preserve-3d;
     }
 
-    .mars-satellite .satellite-core {
+    .mars-satellite.behind {
+      z-index: 0;
+      --sat-shadow: 0 0 6px rgba(14, 165, 233, 0.35);
+    }
+
+    .mars-satellite .satellite-hull {
       position: absolute;
       left: 0;
       top: 0;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #9fe5ff;
-      border: 1px solid rgba(14, 165, 233, 0.85);
-      box-shadow: 0 0 10px rgba(14, 165, 233, 0.95), 0 0 22px rgba(14, 165, 233, 0.55);
+      width: 10px;
+      height: 7px;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #e7f8ff, #9ed9f3 70%, #73b3d3);
+      border: 1px solid rgba(19, 98, 137, 0.85);
       transform: translate(-50%, -50%);
-      animation: satelliteBlink 1.2s ease-in-out infinite;
+      box-shadow: var(--sat-shadow);
+    }
+
+    .mars-satellite .satellite-hull::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.55);
+    }
+
+    .mars-satellite .satellite-panel {
+      position: absolute;
+      top: 0;
+      width: 10px;
+      height: 4px;
+      border-radius: 2px;
+      border: 1px solid rgba(37, 80, 119, 0.85);
+      background: linear-gradient(180deg, #4ea3dc, #235a8a);
+      transform: translateY(-50%);
+      box-shadow: 0 0 6px rgba(14, 165, 233, 0.3);
+    }
+
+    .mars-satellite .satellite-panel.panel-left {
+      left: -11px;
+      transform: translate(-100%, -50%) skewX(-8deg);
+    }
+
+    .mars-satellite .satellite-panel.panel-right {
+      left: 11px;
+      transform: translate(0, -50%) skewX(8deg);
+    }
+
+    .mars-satellite .satellite-beacon {
+      position: absolute;
+      left: 50%;
+      top: -2px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #ff8b8b;
+      transform: translate(-50%, -100%);
+      box-shadow: 0 0 8px rgba(255, 107, 107, 0.9);
+      animation: satelliteBeaconBlink 0.95s steps(2, end) infinite;
     }
 
     .mars-satellite .satellite-trail {
       position: absolute;
-      left: -24px;
-      top: -1px;
-      width: 24px;
-      height: 2px;
+      left: calc(var(--trail-length) * -1);
+      top: -2px;
+      width: var(--trail-length);
+      height: 4px;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(14, 165, 233, 0), rgba(14, 165, 233, 0.7));
-      filter: blur(0.5px);
-      opacity: 0.9;
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0), rgba(14, 165, 233, var(--trail-alpha)));
+      filter: blur(1px);
+      opacity: 1;
       transform-origin: right center;
-      animation: satelliteTrailFade 1.2s ease-in-out infinite;
+      mask-image: linear-gradient(90deg, transparent 0%, black 55%, black 100%);
     }
 
-    @keyframes satelliteBlink {
-      0%, 100% { opacity: 0.45; transform: translate(-50%, -50%) scale(0.92); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
-    }
-
-    @keyframes satelliteTrailFade {
-      0%, 100% { opacity: 0.35; width: 18px; left: -18px; }
-      50% { opacity: 0.9; width: 28px; left: -28px; }
+    @keyframes satelliteBeaconBlink {
+      0%, 100% { opacity: 0.3; transform: translate(-50%, -100%) scale(0.9); }
+      50% { opacity: 1; transform: translate(-50%, -100%) scale(1.12); }
     }
 
     .mars-label {
@@ -1543,7 +1598,11 @@
               <div class="mars-logo"></div>
               <div id="marsSatellite" class="mars-satellite">
                 <span class="satellite-trail"></span>
-                <span class="satellite-core"></span>
+                <span class="satellite-panel panel-left"></span>
+                <span class="satellite-hull">
+                  <span class="satellite-beacon"></span>
+                </span>
+                <span class="satellite-panel panel-right"></span>
               </div>
             </div>
             <div class="mars-label"><strong>MARS-1</strong>Orbital Relay Signal<br>Active</div>
@@ -2776,7 +2835,7 @@
 
         const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (prefersReducedMotion) {
-          satellite.style.transform = "translate(44px, 0px)";
+          satellite.style.transform = "translate(44px, 0px) rotate(0deg) scale(1)";
           return;
         }
 
@@ -2818,8 +2877,19 @@
           const dpx = dx * cosTilt - dy * sinTilt;
           const dpy = dx * sinTilt + dy * cosTilt;
           const tangentDeg = (Math.atan2(dpy, dpx) * 180) / Math.PI;
+          const denom = Math.max(orbit.radiusY, 1);
+          const depth = Math.max(-1, Math.min(1, py / denom));
+          const front = (depth + 1) / 2;
+          const scale = 0.74 + front * 0.52;
+          const opacity = 0.43 + front * 0.57;
+          const trailLength = 16 + front * 22;
+          const trailAlpha = 0.3 + front * 0.65;
 
-          satellite.style.transform = `translate(${px.toFixed(2)}px, ${py.toFixed(2)}px) rotate(${tangentDeg.toFixed(2)}deg)`;
+          satellite.classList.toggle("behind", depth < -0.08);
+          satellite.style.setProperty("--trail-length", `${trailLength.toFixed(1)}px`);
+          satellite.style.setProperty("--trail-alpha", `${trailAlpha.toFixed(2)}`);
+          satellite.style.transform = `translate(${px.toFixed(2)}px, ${py.toFixed(2)}px) rotate(${tangentDeg.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+          satellite.style.opacity = opacity.toFixed(3);
           satelliteOrbitRAF = requestAnimationFrame(tick);
         };
 
