@@ -1211,6 +1211,16 @@
       line-height: 1.45;
     }
 
+    .terminal.closed {
+      display: grid;
+      place-items: center;
+      white-space: normal;
+      overflow: hidden;
+      max-height: none;
+      min-height: 360px;
+      padding: 12px;
+    }
+
     .terminal.typing::after {
       content: "█";
       display: inline-block;
@@ -1222,6 +1232,37 @@
     @keyframes terminalCursorBlink {
       0%, 49% { opacity: 1; }
       50%, 100% { opacity: 0; }
+    }
+
+    .hq-closed-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 330px;
+      color: #9dc4dc;
+      font-family: "Inter", sans-serif;
+      text-align: center;
+    }
+
+    .hq-closed-view .planet-wrap {
+      width: 246px;
+      height: 246px;
+      margin: 0;
+    }
+
+    .hq-closed-view .planet {
+      width: 188px;
+      height: 188px;
+    }
+
+    .hq-closed-note {
+      letter-spacing: 0.08em;
+      font-size: 0.83rem;
+      color: #7ca3be;
+      text-transform: uppercase;
     }
 
     .final-actions {
@@ -2948,11 +2989,7 @@
           </div>
           <div id="status2" class="status-cycle show"></div>
         `;
-        const processingPlanet = submissionContent.querySelector(".planet");
-        const logoPlanet = document.querySelector(".mars-logo");
-        if (processingPlanet && logoPlanet) {
-          processingPlanet.style.backgroundImage = getComputedStyle(logoPlanet).backgroundImage;
-        }
+        applyMarsTexture(submissionContent.querySelector(".planet"));
         const status2 = document.getElementById("status2");
         await cycleStatus(status2, [
           "Application received by MARS-1 HQ.",
@@ -3043,6 +3080,7 @@ Your colony is counting on you.
           <div id="terminal" class="terminal"></div>
           <div id="finalActions" class="final-actions">
             <button id="downloadDocxBtn" class="btn primary" type="button">DOWNLOAD APPLICATION (DOCX)</button>
+            <button id="closeHqMsgBtn" class="btn" type="button">CLOSE MESSAGE</button>
             <button id="reviewCvBtn" class="btn outline" type="button">REVIEW MY CV</button>
           </div>
         `;
@@ -3057,6 +3095,23 @@ Your colony is counting on you.
         revealButtons();
 
         document.getElementById("downloadDocxBtn").addEventListener("click", generateDocx);
+        document.getElementById("closeHqMsgBtn").addEventListener("click", (e) => {
+          terminal.classList.remove("typing");
+          terminal.classList.add("closed");
+          terminal.innerHTML = `
+            <div class="hq-closed-view">
+              <div class="planet-wrap" aria-hidden="true">
+                <span class="hq-wave wave-a"></span>
+                <span class="hq-wave wave-b"></span>
+                <div class="planet"></div>
+              </div>
+              <div class="hq-closed-note">Relay feed closed. Orbital beacon active.</div>
+            </div>
+          `;
+          applyMarsTexture(terminal.querySelector(".planet"));
+          e.currentTarget.disabled = true;
+          e.currentTarget.textContent = "MESSAGE CLOSED";
+        });
         document.getElementById("reviewCvBtn").addEventListener("click", () => {
           submissionOverlay.classList.remove("active");
           hideTimerDuringSubmission(false);
@@ -3081,6 +3136,13 @@ Your colony is counting on you.
           minute: "2-digit",
           second: "2-digit"
         });
+      }
+
+      function applyMarsTexture(planetEl) {
+        if (!planetEl) return;
+        const logoPlanet = document.querySelector(".mars-logo");
+        if (!logoPlanet) return;
+        planetEl.style.backgroundImage = getComputedStyle(logoPlanet).backgroundImage;
       }
 
       async function generateDocx() {
