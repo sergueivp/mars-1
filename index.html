@@ -243,6 +243,51 @@
       line-height: 1.45;
     }
 
+    .mars-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(16, 27, 45, 0.9), rgba(8, 14, 27, 0.94));
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mars-logo {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      position: relative;
+      background: radial-gradient(circle at 32% 30%, #ffbb91, #e8560a 46%, #6b2e13 75%);
+      animation: spin 7s linear infinite;
+      box-shadow: 0 0 18px rgba(232, 86, 10, 0.34);
+      flex-shrink: 0;
+    }
+
+    .mars-logo::before {
+      content: "";
+      position: absolute;
+      inset: -7px;
+      border-radius: 50%;
+      border: 2px solid rgba(14, 165, 233, 0.46);
+      border-left-color: transparent;
+      border-right-color: transparent;
+      transform: rotate(24deg);
+    }
+
+    .mars-label {
+      font-size: 0.86rem;
+      color: #d6ecff;
+      line-height: 1.35;
+    }
+
+    .mars-label strong {
+      display: block;
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      color: #ffab74;
+    }
+
     .panel {
       min-height: 70vh;
       padding: 22px;
@@ -415,6 +460,78 @@
       padding: 8px 10px;
       border-radius: 9px;
       font-size: 0.82rem;
+    }
+
+    .btn.shake {
+      animation: submitShake 400ms ease;
+    }
+
+    @keyframes submitShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .submission-alert {
+      background: #3a0a0a;
+      border: 1px solid #cc2200;
+      color: #ff6b6b;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 10px 0 14px;
+      font-size: 13px;
+      line-height: 1.45;
+      display: none;
+      opacity: 0;
+      transition: opacity 200ms ease;
+    }
+
+    .submission-alert.show {
+      display: block;
+      opacity: 1;
+    }
+
+    .submission-alert .line {
+      margin-bottom: 4px;
+    }
+
+    .submission-alert .line:last-of-type {
+      margin-bottom: 10px;
+    }
+
+    .submission-alert .review-fix {
+      border: 1px solid rgba(255, 141, 141, 0.5);
+      background: rgba(255, 107, 107, 0.12);
+      color: #ffd0d0;
+      border-radius: 9px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .clear-data-btn {
+      position: fixed;
+      top: 18px;
+      right: 132px;
+      z-index: 115;
+      border: 1px solid rgba(239, 68, 68, 0.55);
+      background: rgba(58, 10, 10, 0.9);
+      color: #ffb2b2;
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .clear-data-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 107, 107, 0.75);
     }
 
     .badge {
@@ -1017,6 +1134,11 @@
       margin-top: 6px;
     }
 
+    .bullet-hint {
+      color: #8899aa;
+      font-style: italic;
+    }
+
     .intro-only {
       display: none;
     }
@@ -1098,11 +1220,19 @@
         right: 12px;
         padding: 8px 12px;
       }
+
+      .clear-data-btn {
+        right: 104px;
+        top: 12px;
+        padding: 8px 10px;
+        font-size: 0.72rem;
+      }
     }
   </style>
 </head>
 <body>
   <div id="timer" class="timer-chip hidden" aria-live="polite">90:00</div>
+  <button id="clearDataBtn" class="clear-data-btn" type="button">CLEAR DATA</button>
   <div id="expiredOverlay" class="expired-overlay hidden" role="status">
     Transmission window has closed — but your data is saved. Submit when ready.
   </div>
@@ -1127,7 +1257,7 @@
     <div class="app-shell">
       <div class="layout">
         <aside class="phase-rail" aria-label="Application phases">
-          <h3>Mission Phases</h3>
+          <h3>CV Sections</h3>
           <div id="stepper" class="progress-stepper" aria-label="Progress steps"></div>
         </aside>
 
@@ -1311,10 +1441,11 @@
             <div class="preview-shell">
               <div class="cv-card" id="cvPreview"></div>
             </div>
+            <div id="submissionValidationAlert" class="submission-alert" role="alert" aria-live="assertive"></div>
 
             <div class="nav">
               <button type="button" class="btn" data-back="2"><i class="fa-solid fa-arrow-left"></i> EDIT MY APPLICATION</button>
-              <button type="button" class="btn primary" data-next="10">SUBMIT APPLICATION <i class="fa-solid fa-arrow-right"></i></button>
+              <button id="submitApplicationBtn" type="button" class="btn primary" data-next="10">SUBMIT APPLICATION <i class="fa-solid fa-arrow-right"></i></button>
             </div>
           </section>
 
@@ -1407,6 +1538,8 @@
         A2: 50,
         A1: 35
       };
+
+      const PROJECT_BULLET_PREVIEW_HINT = "Complete at least two fields above to preview your bullet point.";
 
       const introView = document.getElementById("introView");
       const mainApp = document.getElementById("mainApp");
@@ -1794,13 +1927,37 @@
         }
       }
 
-      function projectBulletPreview(project) {
+      function countProjectBuilderFields(project) {
+        return [project.did, project.toolsText, project.outcome].filter((value) => (value || "").trim().length > 0).length;
+      }
+
+      function canGenerateProjectBullet(project) {
+        return countProjectBuilderFields(project) >= 2;
+      }
+
+      function buildProjectBullet(project) {
+        if (!canGenerateProjectBullet(project)) return "";
         const action = project.actionVerb || "Conducted";
         const did = (project.did || "").trim() || "a geospatial task";
         const didWithVerb = new RegExp(`^${action}\\b`, "i").test(did) ? did : `${action} ${did}`;
         const tools = (project.toolsText || "").trim() || "relevant tools";
         const outcome = (project.outcome || "").trim() || "a measurable output";
         return `${didWithVerb} using ${tools}, resulting in ${outcome}.`;
+      }
+
+      function isPreviewHintText(text) {
+        return (text || "").trim() === PROJECT_BULLET_PREVIEW_HINT;
+      }
+
+      function projectBulletPreview(project) {
+        const generated = buildProjectBullet(project);
+        return generated || PROJECT_BULLET_PREVIEW_HINT;
+      }
+
+      function getProjectBulletForOutput(project) {
+        const manualBullet = (project.bullet || "").trim();
+        if (manualBullet && !isPreviewHintText(manualBullet)) return manualBullet;
+        return buildProjectBullet(project);
       }
 
       function addProjectEntry(entry) {
@@ -1830,6 +1987,8 @@
         state.projects.forEach((p) => {
           const card = document.createElement("div");
           card.className = "entry-card";
+          const previewText = (p.bullet || "").trim() ? p.bullet : projectBulletPreview(p);
+          const previewIsHint = isPreviewHintText(previewText);
           card.innerHTML = `
             <button type="button" class="entry-remove" title="Remove" data-remove="${p.id}">&times;</button>
             <div class="form-grid">
@@ -1851,16 +2010,26 @@
                   </select>
                 </div>
                 <div class="small-caption">Preview / editable bullet</div>
-                <textarea data-field="bullet" rows="2">${escapeHtml(p.bullet || projectBulletPreview(p))}</textarea>
+                <textarea data-field="bullet" rows="2" class="${previewIsHint ? "bullet-hint" : ""}">${escapeHtml(previewText)}</textarea>
               </div>
             </div>
           `;
 
           const recalc = () => {
-            p.bullet = projectBulletPreview(p);
             const bullet = card.querySelector('textarea[data-field="bullet"]');
-            if (document.activeElement !== bullet) {
-              bullet.value = p.bullet;
+            const generated = buildProjectBullet(p);
+            if (generated) {
+              p.bullet = generated;
+              if (document.activeElement !== bullet) {
+                bullet.value = p.bullet;
+              }
+              bullet.classList.remove("bullet-hint");
+            } else {
+              p.bullet = PROJECT_BULLET_PREVIEW_HINT;
+              if (document.activeElement !== bullet) {
+                bullet.value = PROJECT_BULLET_PREVIEW_HINT;
+              }
+              bullet.classList.add("bullet-hint");
             }
           };
 
@@ -1876,6 +2045,9 @@
             }
             if (["did", "toolsText", "outcome", "actionVerb"].includes(field)) {
               recalc();
+            } else if (field === "bullet") {
+              const bullet = card.querySelector('textarea[data-field="bullet"]');
+              bullet.classList.toggle("bullet-hint", isPreviewHintText(p.bullet));
             }
             saveState();
             updateCompleteness();
@@ -2116,13 +2288,16 @@
           </div>
         `).join("") || `<div class="cv-item">No education entries yet.</div>`;
 
-        const projectHtml = state.projects.map((pr) => `
+        const projectHtml = state.projects.map((pr) => {
+          const bulletText = getProjectBulletForOutput(pr) || "No bullet detail provided.";
+          return `
           <div class="cv-item"><strong>${escapeHtml(pr.title || "Mission Entry")}</strong> (${escapeHtml(pr.period || "Period")})<br>
           ${escapeHtml(pr.role || "Role")}<br>
-          <ul style="margin:6px 0 0 18px; padding:0;"><li>${escapeHtml(pr.bullet || projectBulletPreview(pr))}</li></ul>
+          <ul style="margin:6px 0 0 18px; padding:0;"><li>${escapeHtml(bulletText)}</li></ul>
           ${pr.tools && pr.tools.length ? `<div style="margin-top:4px;">${pr.tools.map((t) => `<span class=\"cv-tag\">${escapeHtml(t)}</span>`).join(" ")}</div>` : ""}
           </div>
-        `).join("") || `<div class="cv-item">No mission entries yet.</div>`;
+        `;
+        }).join("") || `<div class="cv-item">No mission entries yet.</div>`;
 
         const skillsHtml = state.technicalSkills.length
           ? `<div class="cv-tags">${state.technicalSkills.map((s) => `<span class="cv-tag">${escapeHtml(s)}</span>`).join("")}</div>`
@@ -2218,6 +2393,93 @@
         return true;
       }
 
+      function shakeSubmitButton() {
+        const btn = document.getElementById("submitApplicationBtn");
+        if (!btn) return;
+        btn.classList.remove("shake");
+        void btn.offsetWidth;
+        btn.classList.add("shake");
+        setTimeout(() => btn.classList.remove("shake"), 450);
+      }
+
+      function renderSubmissionErrors(errors) {
+        const alertBox = document.getElementById("submissionValidationAlert");
+        if (!alertBox) return;
+        if (!errors.length) {
+          alertBox.innerHTML = "";
+          alertBox.classList.remove("show");
+          return;
+        }
+        alertBox.innerHTML = `
+          ${errors.map((error) => `<div class="line">⚠ ${escapeHtml(error)}</div>`).join("")}
+          <button type="button" class="review-fix" id="reviewFixBtn">REVIEW & FIX</button>
+        `;
+        alertBox.classList.add("show");
+        const reviewBtn = document.getElementById("reviewFixBtn");
+        if (reviewBtn) {
+          reviewBtn.addEventListener("click", () => {
+            showSection(2);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        }
+      }
+
+      function getSubmissionValidationErrors() {
+        const errors = [];
+        const fullName = (state.personal.fullName || "").trim();
+        const email = (state.personal.email || "").trim();
+        const specialisation = (state.personal.specialisation || "").trim();
+        const summary = (state.summary || "").trim();
+
+        if (!fullName || !email || !specialisation || !summary) {
+          errors.push("Your profile statement is missing. MARS-1 HQ cannot assess an anonymous candidate.");
+        }
+
+        const summaryLower = summary.toLowerCase();
+        const summaryTemplates = [
+          "i am a [adjective]",
+          "[area 1]",
+          "[area 2]",
+          "[specialisation]",
+          "[goal]",
+          "copy frame"
+        ];
+        if (summaryTemplates.some((token) => summaryLower.includes(token))) {
+          errors.push("Your profile statement appears to contain template placeholder text. Replace all [brackets] with your own words before submitting.");
+        }
+
+        const projectBulletTemplates = [
+          "using relevant tools, resulting in a measurable output",
+          "resulting in a measurable output",
+          "optimised using relevant tools"
+        ];
+        const hasTemplateProjectBullet = state.projects.some((project) => {
+          const bullet = (project.bullet || "").toLowerCase();
+          return projectBulletTemplates.some((token) => bullet.includes(token));
+        });
+        if (hasTemplateProjectBullet) {
+          errors.push("One or more mission entries contain auto-generated placeholder text. Edit your bullet points before submitting.");
+        }
+
+        const hasEducation = state.education.some((entry) => (entry.institution || "").trim() && (entry.degree || "").trim());
+        if (!hasEducation) {
+          errors.push("No academic record found. Add at least one qualification to your file.");
+        }
+
+        const hasProject = state.projects.some((project) => {
+          const title = (project.title || "").trim();
+          const builderFields = [(project.did || "").trim(), (project.toolsText || "").trim(), (project.outcome || "").trim()];
+          const manualBullet = (project.bullet || "").trim();
+          const hasBulletContent = builderFields.some(Boolean) || (manualBullet && !isPreviewHintText(manualBullet));
+          return title && hasBulletContent;
+        });
+        if (!hasProject) {
+          errors.push("Your Field Operations Log is empty. MARS-1 requires evidence of field competency.");
+        }
+
+        return errors;
+      }
+
       function setupNavigation() {
         panelRoot.addEventListener("click", (e) => {
           const next = e.target.closest("[data-next]");
@@ -2226,6 +2488,13 @@
             const target = Number(next.dataset.next);
             if (validateStep(currentStep)) {
               if (target === 10) {
+                const errors = getSubmissionValidationErrors();
+                if (errors.length) {
+                  renderSubmissionErrors(errors);
+                  shakeSubmitButton();
+                  return;
+                }
+                renderSubmissionErrors([]);
                 showSection(10);
               } else {
                 showSection(target);
@@ -2293,6 +2562,15 @@
         });
 
         document.getElementById("startSubmissionBtn").addEventListener("click", runSubmissionSequence);
+        document.getElementById("clearDataBtn").addEventListener("click", clearAllDataWithConfirmation);
+      }
+
+      function clearAllDataWithConfirmation() {
+        const confirmed = window.confirm("This will erase the whole process and clear all saved data. Do you want to continue?");
+        if (!confirmed) return;
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(TIMER_KEY);
+        window.location.reload();
       }
 
       function typewriterIntro() {
@@ -2403,6 +2681,15 @@
       }
 
       async function runSubmissionSequence() {
+        const errors = getSubmissionValidationErrors();
+        if (errors.length) {
+          renderSubmissionErrors(errors);
+          showSection(9);
+          shakeSubmitButton();
+          return;
+        }
+        renderSubmissionErrors([]);
+
         submissionOverlay.classList.add("active");
         hideTimerDuringSubmission(true);
 
@@ -2578,99 +2865,289 @@ Your colony is counting on you.
           return;
         }
 
-        const { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType, BorderStyle } = window.docx;
+        const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } = window.docx;
         const p = state.personal;
+        const summaryText = (state.summary || "").trim();
         const softSkillsAll = [...state.softSkills, ...(state.customSoftSkill.trim() ? [state.customSoftSkill.trim()] : [])];
+        const bodyLineSpacing = 276;
+        const bodyAfter = 80;
 
         const children = [];
 
-        children.push(new Paragraph({
-          text: p.fullName || "Candidate Name",
-          heading: HeadingLevel.HEADING_1,
-          spacing: { after: 120 }
-        }));
+        const bodyParagraph = (text, options = {}) => new Paragraph({
+          children: [new TextRun({
+            text: text || "",
+            font: "Calibri",
+            size: 21,
+            color: "1A1A2E",
+            ...(options.run || {})
+          })],
+          spacing: { line: bodyLineSpacing, after: bodyAfter, ...(options.spacing || {}) },
+          alignment: options.alignment || AlignmentType.LEFT,
+          ...(options.extra || {})
+        });
 
-        children.push(new Paragraph({
-          children: [new TextRun({ text: `${state.unitId || "UNIT-UNKNOWN"} | ${p.specialisation || "Specialisation"} | ${p.email || "Email"}`, size: 20 })],
-          spacing: { after: 60 }
-        }));
-
-        if (p.linkedin) {
+        const addSectionHeading = (text) => {
           children.push(new Paragraph({
-            children: [new TextRun({ text: p.linkedin, size: 20 })],
-            spacing: { after: 60 }
+            children: [new TextRun({
+              text: String(text || "").toUpperCase(),
+              font: "Calibri",
+              size: 18,
+              bold: true,
+              color: "E8560A"
+            })],
+            border: {
+              bottom: { color: "DDDDDD", style: BorderStyle.SINGLE, size: 4, space: 1 }
+            },
+            spacing: { before: 280, after: 120 }
           }));
+        };
+
+        const addBodyLine = (text, runOverrides = {}, spacingOverrides = {}) => {
+          children.push(new Paragraph({
+            children: [new TextRun({
+              text,
+              font: "Calibri",
+              size: 21,
+              color: "1A1A2E",
+              ...runOverrides
+            })],
+            spacing: { line: bodyLineSpacing, after: bodyAfter, ...spacingOverrides }
+          }));
+        };
+
+        const headerLine2Parts = [
+          p.specialisation || "Specialisation",
+          state.unitId || "UNIT-UNKNOWN",
+          p.email || "Email"
+        ];
+        if ((p.linkedin || "").trim()) {
+          headerLine2Parts.push(p.linkedin.trim());
         }
 
         children.push(new Paragraph({
-          border: { bottom: { color: "BFCAD6", space: 1, style: BorderStyle.SINGLE, size: 6 } },
-          spacing: { after: 180 }
+          children: [new TextRun({
+            text: (p.fullName || "Candidate Name").trim(),
+            font: "Calibri",
+            size: 44,
+            bold: true,
+            color: "1A1A2E"
+          })],
+          spacing: { after: 80 }
         }));
 
-        function heading(text) {
-          children.push(new Paragraph({
-            children: [new TextRun({ text, bold: true, size: 24 })],
-            spacing: { before: 120, after: 80 }
-          }));
+        children.push(new Paragraph({
+          children: [new TextRun({
+            text: headerLine2Parts.join(" | "),
+            font: "Calibri",
+            size: 18,
+            color: "555555"
+          })],
+          spacing: { after: 40 }
+        }));
+
+        children.push(new Paragraph({
+          border: {
+            bottom: { color: "E8560A", style: BorderStyle.SINGLE, size: 8, space: 1 }
+          },
+          spacing: { after: 200 }
+        }));
+
+        if (summaryText) {
+          addSectionHeading("PROFILE STATEMENT");
+          addBodyLine(summaryText);
         }
 
-        heading("Profile Statement");
-        children.push(new Paragraph({ text: state.summary || "N/A" }));
+        addSectionHeading("EDUCATION");
+        const educationEntries = state.education.filter((entry) => (entry.institution || "").trim() || (entry.degree || "").trim());
+        if (!educationEntries.length) {
+          addBodyLine("N/A");
+        } else {
+          educationEntries.forEach((entry) => {
+            const degree = (entry.degree || "Degree Title").trim();
+            const institution = (entry.institution || "Institution").trim();
+            children.push(new Paragraph({
+              children: [new TextRun({
+                text: `${degree} — ${institution}`,
+                bold: true,
+                font: "Calibri",
+                size: 21,
+                color: "1A1A2E"
+              })],
+              spacing: { line: bodyLineSpacing, after: 20 }
+            }));
 
-        heading("Education");
-        if (state.education.length) {
-          state.education.forEach((e) => {
-            children.push(new Paragraph({ text: `${e.degree || "Degree"} — ${e.institution || "Institution"}`, bullet: { level: 0 } }));
-            children.push(new Paragraph({ text: `${e.startYear || "-"} - ${e.present ? "Present" : (e.endYear || "-")}${e.grade ? ` | Grade: ${e.grade}` : ""}`, indent: { left: 720 } }));
-            if (e.modules && e.modules.length) {
-              children.push(new Paragraph({ text: `Modules: ${e.modules.join(", ")}`, indent: { left: 720 } }));
+            const start = (entry.startYear || "").trim();
+            const end = entry.present ? "Present" : (entry.endYear || "").trim();
+            const years = [start, end].filter(Boolean).join(" – ") || "Dates not specified";
+            const gradeSuffix = (entry.grade || "").trim() ? ` [${entry.grade.trim()}]` : "";
+            addBodyLine(`${years}${gradeSuffix}`, {}, { after: 20 });
+
+            if (entry.modules && entry.modules.length) {
+              addBodyLine(entry.modules.join(", "), { italics: true, size: 19, color: "666666" }, { after: 160 });
+            } else {
+              addBodyLine("", {}, { after: 160 });
             }
           });
-        } else {
-          children.push(new Paragraph({ text: "N/A" }));
         }
 
-        heading("Field Operations Log");
-        if (state.projects.length) {
-          state.projects.forEach((pr) => {
-            children.push(new Paragraph({ text: `${pr.title || "Mission Entry"} (${pr.period || "Period"})`, bullet: { level: 0 } }));
-            children.push(new Paragraph({ text: `Role: ${pr.role || "-"}`, indent: { left: 720 } }));
-            children.push(new Paragraph({ text: pr.bullet || projectBulletPreview(pr), indent: { left: 720 } }));
-            if (pr.tools && pr.tools.length) {
-              children.push(new Paragraph({ text: `Tools: ${pr.tools.join(", ")}`, indent: { left: 720 } }));
+        addSectionHeading("ACADEMIC PROJECTS & FIELD EXPERIENCE");
+        const projectEntries = state.projects.filter((project) => (project.title || "").trim() || (project.role || "").trim() || (project.period || "").trim());
+        if (!projectEntries.length) {
+          addBodyLine("N/A");
+        } else {
+          projectEntries.forEach((project) => {
+            const title = (project.title || "Project").trim();
+            const role = (project.role || "").trim();
+            children.push(new Paragraph({
+              children: [
+                new TextRun({ text: title, bold: true, font: "Calibri", size: 21, color: "1A1A2E" }),
+                ...(role ? [new TextRun({ text: ` · ${role}`, font: "Calibri", size: 21, color: "1A1A2E" })] : [])
+              ],
+              spacing: { line: bodyLineSpacing, after: 20 }
+            }));
+
+            const period = (project.period || "").trim();
+            if (period) {
+              addBodyLine(period, { italics: true, size: 19, color: "666666" }, { after: 20 });
+            }
+
+            const bulletText = getProjectBulletForOutput(project);
+            if (bulletText) {
+              children.push(new Paragraph({
+                children: [new TextRun({ text: bulletText, font: "Calibri", size: 21, color: "1A1A2E" })],
+                bullet: { level: 0 },
+                spacing: { line: bodyLineSpacing, after: 20 }
+              }));
+            }
+
+            if (project.tools && project.tools.length) {
+              addBodyLine(`Tools used: ${project.tools.join(", ")}`, { italics: true, size: 19, color: "666666" }, { after: 160 });
+            } else {
+              addBodyLine("", {}, { after: 160 });
             }
           });
-        } else {
-          children.push(new Paragraph({ text: "N/A" }));
         }
 
-        heading("Technical Skills");
-        children.push(new Paragraph({ text: state.technicalSkills.length ? state.technicalSkills.join(", ") : "N/A" }));
+        addSectionHeading("TECHNICAL SKILLS");
+        const selectedSkills = (state.technicalSkills || []).map((skill) => (skill || "").trim()).filter(Boolean);
+        if (!selectedSkills.length) {
+          addBodyLine("N/A");
+        } else {
+          const groupLabels = {
+            "GEOSPATIAL SOFTWARE": "Geospatial Software",
+            PROGRAMMING: "Programming",
+            "FIELD EQUIPMENT": "Field Equipment",
+            "DATA & REPORTING": "Data & Reporting"
+          };
 
-        heading("Languages");
-        if (state.languages.length) {
-          state.languages.forEach((l) => {
-            children.push(new Paragraph({ text: `${l.language || "Language"} — ${l.level || "-"}`, bullet: { level: 0 } }));
+          const groupedLines = [];
+          const usedSkills = new Set();
+          Object.entries(SKILL_GROUPS).forEach(([groupKey, groupSkills]) => {
+            const present = selectedSkills.filter((skill) => groupSkills.includes(skill));
+            if (!present.length) return;
+            present.forEach((skill) => usedSkills.add(skill));
+            groupedLines.push({
+              label: groupLabels[groupKey] || groupKey,
+              skills: present
+            });
           });
-        } else {
-          children.push(new Paragraph({ text: "N/A" }));
+
+          if (groupedLines.length) {
+            groupedLines.forEach((row) => {
+              children.push(new Paragraph({
+                children: [
+                  new TextRun({ text: `${row.label}: `, bold: true, font: "Calibri", size: 21, color: "1A1A2E" }),
+                  new TextRun({ text: row.skills.join(" · "), font: "Calibri", size: 21, color: "1A1A2E" })
+                ],
+                spacing: { line: bodyLineSpacing, after: bodyAfter }
+              }));
+            });
+
+            const extras = selectedSkills.filter((skill) => !usedSkills.has(skill));
+            if (extras.length) {
+              children.push(new Paragraph({
+                children: [
+                  new TextRun({ text: "Additional Skills: ", bold: true, font: "Calibri", size: 21, color: "1A1A2E" }),
+                  new TextRun({ text: extras.join(" · "), font: "Calibri", size: 21, color: "1A1A2E" })
+                ],
+                spacing: { line: bodyLineSpacing, after: bodyAfter }
+              }));
+            }
+          } else {
+            for (let i = 0; i < selectedSkills.length; i += 4) {
+              const row = selectedSkills.slice(i, i + 4);
+              addBodyLine(row.join(" · "));
+            }
+          }
         }
 
-        heading("Soft Skills");
-        children.push(new Paragraph({ text: softSkillsAll.length ? softSkillsAll.join(", ") : "N/A" }));
+        addSectionHeading("LANGUAGES");
+        const languages = state.languages.filter((lang) => (lang.language || "").trim());
+        if (!languages.length) {
+          addBodyLine("N/A");
+        } else {
+          languages.forEach((lang) => {
+            addBodyLine(`${lang.language.trim()}  —  ${(lang.level || "").trim() || "-"}`);
+          });
+        }
+
+        addSectionHeading("SOFT SKILLS");
+        addBodyLine(softSkillsAll.length ? softSkillsAll.join(", ") : "N/A");
 
         children.push(new Paragraph({
-          children: [new TextRun({ text: "Submitted via MARS-1 Career Portal, 2031", italics: true, size: 18, color: "6B7280" })],
+          children: [new TextRun({
+            text: "Submitted via MARS-1 Career Portal — Recruitment Cycle 2031-B",
+            font: "Calibri",
+            size: 16,
+            italics: true,
+            color: "AAAAAA"
+          })],
           alignment: AlignmentType.CENTER,
-          spacing: { before: 240 }
+          spacing: { before: 220, after: 0 }
         }));
 
         const doc = new Document({
-          sections: [{ children }]
+          styles: {
+            default: {
+              document: {
+                run: {
+                  font: "Calibri",
+                  size: 21,
+                  color: "1A1A2E"
+                }
+              }
+            }
+          },
+          sections: [{
+            properties: {
+              page: {
+                margin: {
+                  top: 1021,
+                  bottom: 1021,
+                  left: 1134,
+                  right: 1134
+                }
+              }
+            },
+            children
+          }]
         });
 
+        function buildExportFileName(fullName) {
+          const parts = (fullName || "").trim().split(/\s+/).filter(Boolean);
+          if (parts.length < 2) return "MARS1_Application.docx";
+          const firstName = parts[0];
+          const lastName = parts[parts.length - 1];
+          const safe = (value) => value.replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "");
+          const safeFirst = safe(firstName);
+          const safeLast = safe(lastName);
+          if (!safeFirst || !safeLast) return "MARS1_Application.docx";
+          return `MARS1_${safeLast}_${safeFirst}.docx`;
+        }
+
         Packer.toBlob(doc).then((blob) => {
-          const fileName = `MARS1_Application_${(p.fullName || "Student_Name").trim().replace(/\s+/g, "_")}.docx`;
+          const fileName = buildExportFileName(p.fullName);
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -2766,47 +3243,3 @@ Your colony is counting on you.
   </script>
 </body>
 </html>
-    .mars-card {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: linear-gradient(145deg, rgba(16, 27, 45, 0.9), rgba(8, 14, 27, 0.94));
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .mars-logo {
-      width: 66px;
-      height: 66px;
-      border-radius: 50%;
-      position: relative;
-      background: radial-gradient(circle at 32% 30%, #ffbb91, #e8560a 46%, #6b2e13 75%);
-      animation: spin 7s linear infinite;
-      box-shadow: 0 0 18px rgba(232, 86, 10, 0.34);
-      flex-shrink: 0;
-    }
-
-    .mars-logo::before {
-      content: "";
-      position: absolute;
-      inset: -7px;
-      border-radius: 50%;
-      border: 2px solid rgba(14, 165, 233, 0.46);
-      border-left-color: transparent;
-      border-right-color: transparent;
-      transform: rotate(24deg);
-    }
-
-    .mars-label {
-      font-size: 0.86rem;
-      color: #d6ecff;
-      line-height: 1.35;
-    }
-
-    .mars-label strong {
-      display: block;
-      font-size: 0.95rem;
-      letter-spacing: 0.06em;
-      color: #ffab74;
-    }
