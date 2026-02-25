@@ -1082,44 +1082,86 @@
       transition: width 120ms linear;
     }
 
-    .planet {
-      width: 150px;
-      height: 150px;
-      margin: 12px auto;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #ffb07e, #e8560a 45%, #6b2e13 75%);
+    .planet-wrap {
       position: relative;
-      animation: spin 6s linear infinite;
-      box-shadow: 0 0 24px rgba(232, 86, 10, 0.35);
+      width: 220px;
+      height: 220px;
+      margin: 4px auto 8px;
+      display: grid;
+      place-items: center;
     }
 
-    .planet::before,
-    .planet::after {
-      content: "";
-      position: absolute;
-      border-radius: 999px;
-      background: rgba(130, 53, 21, 0.32);
+    .planet {
+      width: 176px;
+      height: 176px;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(130% 120% at 28% 24%, #ffd9bf 0%, #f9a570 20%, #e26a2c 44%, #a7431d 70%, #652915 100%);
+      box-shadow:
+        0 0 38px rgba(232, 86, 10, 0.28),
+        inset 14px 10px 18px rgba(255, 209, 174, 0.24),
+        inset -16px -18px 28px rgba(44, 14, 7, 0.5);
+      animation: marsFloat 6.2s ease-in-out infinite;
     }
 
     .planet::before {
-      width: 85px;
-      height: 20px;
-      top: 36px;
-      left: 36px;
-      transform: rotate(-15deg);
+      content: "";
+      position: absolute;
+      inset: -8%;
+      border-radius: 50%;
+      background:
+        radial-gradient(30% 24% at 72% 28%, rgba(109, 40, 19, 0.45) 0 70%, transparent 73%),
+        radial-gradient(34% 28% at 30% 58%, rgba(151, 60, 27, 0.42) 0 66%, transparent 70%),
+        radial-gradient(24% 18% at 58% 70%, rgba(91, 31, 14, 0.35) 0 70%, transparent 73%),
+        radial-gradient(26% 20% at 44% 26%, rgba(205, 100, 53, 0.27) 0 72%, transparent 75%),
+        radial-gradient(28% 22% at 84% 62%, rgba(82, 27, 12, 0.38) 0 68%, transparent 71%),
+        radial-gradient(34% 30% at 14% 20%, rgba(228, 130, 79, 0.22) 0 66%, transparent 70%);
+      mix-blend-mode: multiply;
+      opacity: 0.9;
+      animation: marsTextureDrift 13s linear infinite;
     }
 
     .planet::after {
-      width: 100px;
-      height: 24px;
-      top: 86px;
-      left: 20px;
-      transform: rotate(12deg);
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(120% 100% at 16% 14%, rgba(255, 241, 224, 0.22), transparent 36%),
+        radial-gradient(140% 120% at 88% 84%, rgba(25, 8, 4, 0.5), transparent 56%);
+      pointer-events: none;
     }
 
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+    .hq-wave {
+      position: absolute;
+      border: 2px solid rgba(14, 165, 233, 0.36);
+      border-radius: 50%;
+      inset: 22px;
+      opacity: 0;
+      animation: hqWavePulse 2.9s ease-out infinite;
+      pointer-events: none;
+    }
+
+    .hq-wave.wave-b {
+      animation-delay: 1.45s;
+    }
+
+    @keyframes marsFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes marsTextureDrift {
+      0% { transform: translateX(-7%) scale(1.04); }
+      50% { transform: translateX(7%) scale(1.08); }
+      100% { transform: translateX(-7%) scale(1.04); }
+    }
+
+    @keyframes hqWavePulse {
+      0% { transform: scale(0.8); opacity: 0.45; }
+      72% { opacity: 0.08; }
+      100% { transform: scale(1.26); opacity: 0; }
     }
 
     .assess-grid {
@@ -2878,7 +2920,11 @@
 
         submissionContent.innerHTML = `
           <h2 style="margin:0;">Processing at MARS-1 HQ</h2>
-          <div class="planet" aria-hidden="true"></div>
+          <div class="planet-wrap" aria-hidden="true">
+            <span class="hq-wave wave-a"></span>
+            <span class="hq-wave wave-b"></span>
+            <div class="planet"></div>
+          </div>
           <div id="status2" class="status-cycle show"></div>
         `;
         const status2 = document.getElementById("status2");
