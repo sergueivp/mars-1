@@ -1949,8 +1949,8 @@
                 <input type="number" min="1900" max="2100" data-field="endYear" value="${escapeHtml(entry.endYear)}" ${entry.present ? "disabled" : ""} />
                 <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-top:6px; color:var(--muted);"><input type="checkbox" data-field="present" ${entry.present ? "checked" : ""} /> Present</label>
               </div>
-              <div class="field"><label>Final grade / GPA</label><input type="text" data-field="grade" value="${escapeHtml(entry.grade)}" /></div>
-              <div class="field full"><label>Relevant modules</label><div class="modules-holder"></div></div>
+              <div class="field"><label>Final grade (optional)</label><input type="text" data-field="grade" value="${escapeHtml(entry.grade)}" /></div>
+              <div class="field full"><label>Key subjects (optional)</label><div class="modules-holder"></div></div>
             </div>
           `;
 
@@ -2356,7 +2356,7 @@
 
         const eduHtml = state.education.map((e) => `
           <div class="cv-item"><strong>${escapeHtml(e.degree || "Degree")}</strong> — ${escapeHtml(e.institution || "Institution")}<br>
-          ${escapeHtml(e.startYear || "-")} - ${e.present ? "Present" : escapeHtml(e.endYear || "-")}${e.grade ? ` | Grade: ${escapeHtml(e.grade)}` : ""}
+          ${escapeHtml(e.startYear || "-")} - ${e.present ? "Present" : escapeHtml(e.endYear || "-")}${e.grade ? ` | Final grade: ${escapeHtml(e.grade)}` : ""}
           ${e.modules && e.modules.length ? `<div style="margin-top:4px;">${e.modules.map((m) => `<span class=\"cv-tag\">${escapeHtml(m)}</span>`).join(" ")}</div>` : ""}
           </div>
         `).join("") || `<div class="cv-item">No education entries yet.</div>`;
@@ -2719,6 +2719,71 @@
         return new Promise((resolve) => setTimeout(resolve, ms));
       }
 
+      function uploadProgressCurve(t) {
+        const clamp = (v) => Math.max(0, Math.min(1, v));
+        const easeOut = (x) => 1 - Math.pow(1 - x, 4);
+        const easeInOut = (x) => 0.5 - 0.5 * Math.cos(Math.PI * x);
+
+        if (t < 0.18) {
+          return 0.35 * easeOut(clamp(t / 0.18));
+        }
+        if (t < 0.48) {
+          return 0.35 + 0.23 * easeInOut(clamp((t - 0.18) / 0.30));
+        }
+        if (t < 0.72) {
+          return 0.58 + 0.26 * easeOut(clamp((t - 0.48) / 0.24));
+        }
+        return 0.84 + 0.16 * easeInOut(clamp((t - 0.72) / 0.28));
+      }
+
+      async function animateUploadBar(uploadFill, uploadPct, durationMs) {
+        await new Promise((resolve) => {
+          const start = performance.now();
+          const frame = (now) => {
+            const t = Math.min(1, (now - start) / durationMs);
+            const p = Math.round(uploadProgressCurve(t) * 100);
+            uploadFill.style.width = `${p}%`;
+            uploadPct.textContent = `${p}%`;
+            if (t < 1) {
+              requestAnimationFrame(frame);
+            } else {
+              resolve();
+            }
+          };
+          requestAnimationFrame(frame);
+        });
+      }
+
+      async function typeHqResponse(terminal, text) {
+        let i = 0;
+        let charsUntilPause = 40 + Math.floor(Math.random() * 20);
+        while (i < text.length) {
+          const char = text[i];
+          const chunkSize = char === "\n" ? 1 : Math.min(text.length - i, 1 + Math.floor(Math.random() * 3));
+          i += chunkSize;
+          terminal.textContent = text.slice(0, i);
+          terminal.scrollTop = terminal.scrollHeight;
+
+          const printed = terminal.textContent;
+          const prev = printed.slice(-2);
+          const last = printed.slice(-1);
+          let delay = 58 + Math.random() * 70;
+          if (last === ",") delay += 220 + Math.random() * 120;
+          else if (last === ":" || last === ";") delay += 300 + Math.random() * 180;
+          else if (last === "." || last === "!" || last === "?") delay += 500 + Math.random() * 280;
+          else if (last === "\n") delay += 170 + Math.random() * 120;
+          if (prev === "\n\n") delay += 650 + Math.random() * 280;
+
+          charsUntilPause -= chunkSize;
+          if (charsUntilPause <= 0 && i < text.length) {
+            delay += 700 + Math.random() * 1000;
+            charsUntilPause = 32 + Math.floor(Math.random() * 24);
+          }
+
+          await wait(delay);
+        }
+      }
+
       function ensureDocxLibrary() {
         if (window.docx) return Promise.resolve(true);
         if (docxReadyPromise) return docxReadyPromise;
@@ -2804,15 +2869,9 @@
           "Compressing academic record...",
           "Authenticating Colony Unit ID...",
           "Transmitting via Relay Station 7..."
-        ], 800, 3500);
+        ], 920, 5000);
 
-        const start = Date.now();
-        while (Date.now() - start < 3500) {
-          const p = Math.min(100, Math.floor(((Date.now() - start) / 3500) * 100));
-          uploadFill.style.width = `${p}%`;
-          uploadPct.textContent = `${p}%`;
-          await wait(100);
-        }
+        await animateUploadBar(uploadFill, uploadPct, 5000);
         uploadFill.style.width = "100%";
         uploadPct.textContent = "100%";
         await statusPromise1;
@@ -2919,23 +2978,12 @@ Your colony is counting on you.
 
         const terminal = document.getElementById("terminal");
         const finalActions = document.getElementById("finalActions");
-        let i = 0;
 
         const revealButtons = () => finalActions.classList.add("show");
         setTimeout(revealButtons, 3000);
 
-        await new Promise((resolve) => {
-          const interval = setInterval(() => {
-            terminal.textContent = finalText.slice(0, i);
-            terminal.scrollTop = terminal.scrollHeight;
-            i += 2;
-            if (i > finalText.length) {
-              clearInterval(interval);
-              revealButtons();
-              resolve();
-            }
-          }, 16);
-        });
+        await typeHqResponse(terminal, finalText);
+        revealButtons();
 
         document.getElementById("downloadDocxBtn").addEventListener("click", generateDocx);
         document.getElementById("reviewCvBtn").addEventListener("click", () => {
@@ -3073,11 +3121,11 @@ Your colony is counting on you.
             const start = (entry.startYear || "").trim();
             const end = entry.present ? "Present" : (entry.endYear || "").trim();
             const years = [start, end].filter(Boolean).join(" – ") || "Dates not specified";
-            const gradeSuffix = (entry.grade || "").trim() ? ` [${entry.grade.trim()}]` : "";
+            const gradeSuffix = (entry.grade || "").trim() ? ` [Final grade: ${entry.grade.trim()}]` : "";
             addBodyLine(`${years}${gradeSuffix}`, {}, { after: 20 });
 
             if (entry.modules && entry.modules.length) {
-              addBodyLine(entry.modules.join(", "), { italics: true, size: 19, color: "666666" }, { after: 160 });
+              addBodyLine(`Key subjects: ${entry.modules.join(", ")}`, { italics: true, size: 19, color: "666666" }, { after: 160 });
             } else {
               addBodyLine("", {}, { after: 160 });
             }
