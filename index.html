@@ -2362,15 +2362,35 @@
       }
 
       function updateCompleteness() {
+        const hasCompletedEducation = state.education.some((entry) =>
+          (entry.institution || "").trim() && (entry.degree || "").trim()
+        );
+
+        const hasCompletedProject = state.projects.some((project) => {
+          const hasTitle = (project.title || "").trim().length > 0;
+          const bullet = getProjectBulletForOutput(project);
+          const hasBuilderContent = [(project.did || "").trim(), (project.toolsText || "").trim(), (project.outcome || "").trim()].some(Boolean);
+          return hasTitle && (hasBuilderContent || !!bullet);
+        });
+
+        const hasOnlyDefaultLanguage =
+          state.languages.length === 1 &&
+          (state.languages[0].language || "").trim().toLowerCase() === "english" &&
+          (state.languages[0].level || "").trim().toUpperCase() === "C1";
+
+        const hasCompletedLanguages =
+          !hasOnlyDefaultLanguage &&
+          state.languages.some((lang) => (lang.language || "").trim().length > 0 && (lang.level || "").trim().length > 0);
+
         const checks = [
           !!state.personal.fullName.trim(),
           !!state.personal.email.trim(),
           !!state.personal.specialisation.trim(),
           !!state.summary.trim(),
-          state.education.length > 0,
-          state.projects.length > 0,
+          hasCompletedEducation,
+          hasCompletedProject,
           state.technicalSkills.length > 0,
-          state.languages.filter((l) => (l.language || "").trim()).length > 0,
+          hasCompletedLanguages,
           state.softSkills.length > 0 || !!state.customSoftSkill.trim()
         ];
 
