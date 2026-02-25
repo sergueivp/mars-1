@@ -1,0 +1,2756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MARS-1 Career Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+  <style>
+    :root {
+      --bg: #0a0f1e;
+      --panel: #141c2e;
+      --panel-2: #111a2b;
+      --border: #1e2d4a;
+      --accent: #e8560a;
+      --accent-2: #0ea5e9;
+      --text: #ffffff;
+      --muted: #8899aa;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --ok: #22c55e;
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      --transition: 200ms ease;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Inter", sans-serif;
+      background: radial-gradient(circle at 20% -10%, rgba(14, 165, 233, 0.18), transparent 40%),
+                  radial-gradient(circle at 80% 0%, rgba(232, 86, 10, 0.2), transparent 34%),
+                  var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .app-shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 22px;
+      transition: opacity var(--transition);
+    }
+
+    .timer-chip {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 120;
+      background: rgba(20, 28, 46, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      backdrop-filter: blur(8px);
+      min-width: 96px;
+      text-align: center;
+    }
+
+    .timer-chip.warn {
+      color: var(--warn);
+      border-color: rgba(245, 158, 11, 0.6);
+      box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.18), var(--shadow);
+    }
+
+    .timer-chip.danger {
+      color: #ff9b9b;
+      border-color: rgba(239, 68, 68, 0.65);
+      animation: pulse 1.25s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.035); }
+    }
+
+    .expired-overlay {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      background: rgba(10, 15, 30, 0.95);
+      color: var(--text);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      z-index: 130;
+      box-shadow: var(--shadow);
+      max-width: 560px;
+      width: calc(100vw - 24px);
+      text-align: center;
+    }
+
+    .progress-stepper {
+      background: rgba(20, 28, 46, 0.82);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(72px, 1fr));
+      gap: 8px;
+      overflow-x: auto;
+      backdrop-filter: blur(6px);
+    }
+
+    .step-pill {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: #0f1728;
+      white-space: nowrap;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .step-pill.active {
+      border-color: rgba(14, 165, 233, 0.7);
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(232, 86, 10, 0.14));
+    }
+
+    .step-pill.done {
+      border-color: rgba(232, 86, 10, 0.55);
+      color: #ffd5c2;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr) 320px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .panel {
+      background: rgba(20, 28, 46, 0.86);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .live-sidebar {
+      position: sticky;
+      top: 84px;
+      padding: 14px;
+      background: rgba(20, 28, 46, 0.86);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: 240px;
+    }
+
+    .live-sidebar h3 {
+      margin: 0 0 8px;
+      color: #d9ecfb;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 84px;
+      padding: 16px;
+    }
+
+    .sidebar h3 {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      color: #d9e6f2;
+      letter-spacing: 0.04em;
+    }
+
+    .completion {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent-2);
+      margin-bottom: 10px;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #0d1424;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 300ms ease;
+    }
+
+    .sidebar p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .panel {
+      min-height: 70vh;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section {
+      display: none;
+      animation: fadeSlide 230ms ease;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    @keyframes fadeSlide {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .heading {
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--accent-2);
+      font-weight: 600;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 1.55rem;
+      line-height: 1.2;
+    }
+
+    .subtle {
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 0.86rem;
+      color: #dbe7f2;
+      font-weight: 600;
+    }
+
+    .required::after {
+      content: " *";
+      color: #ff7f7f;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+      font-family: inherit;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      background: #0e1729;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 11px 12px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 110px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: rgba(14, 165, 233, 0.65);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+    }
+
+    .error {
+      border-color: rgba(239, 68, 68, 0.78) !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14) !important;
+    }
+
+    .error-msg {
+      color: #ff9b9b;
+      font-size: 0.78rem;
+      display: none;
+    }
+
+    .field.invalid .error-msg {
+      display: block;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #0f1a2f;
+      color: var(--text);
+      border-radius: 11px;
+      padding: 11px 15px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(14, 165, 233, 0.5);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, #ed641f, #e8560a);
+      border-color: rgba(255, 156, 112, 0.4);
+      box-shadow: 0 8px 22px rgba(232, 86, 10, 0.3);
+    }
+
+    .btn.outline {
+      background: transparent;
+      border-color: rgba(14, 165, 233, 0.5);
+      color: #d7eeff;
+    }
+
+    .btn.small {
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 0.82rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(14, 165, 233, 0.45);
+      color: #bce9ff;
+      font-weight: 700;
+      width: max-content;
+      box-shadow: 0 0 28px rgba(14, 165, 233, 0.2);
+    }
+
+    .photo-upload-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .photo-preview {
+      width: 90px;
+      height: 90px;
+      border-radius: 999px;
+      border: 2px solid var(--border);
+      background: #0d1627;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .photo-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .helper {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 11px;
+      border: 1px dashed rgba(136, 153, 170, 0.4);
+      background: rgba(10, 15, 30, 0.55);
+    }
+
+    .word-counter {
+      margin-top: 7px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .word-counter.over {
+      color: #ff8e8e;
+      font-weight: 600;
+    }
+
+    details summary {
+      cursor: pointer;
+      list-style: none;
+      font-weight: 700;
+      color: #d9ecfb;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details[open] {
+      margin-top: 8px;
+    }
+
+    .entry-card {
+      background: #0f1728;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .entry-remove {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(239, 68, 68, 0.14);
+      color: #ff9b9b;
+      cursor: pointer;
+    }
+
+    .tag-input-wrap {
+      border: 1px solid var(--border);
+      background: #0b1424;
+      border-radius: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px;
+      min-height: 44px;
+    }
+
+    .tag {
+      background: rgba(14, 165, 233, 0.14);
+      border: 1px solid rgba(14, 165, 233, 0.38);
+      color: #cbeeff;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag .x {
+      cursor: pointer;
+      color: #ffb9b9;
+      font-weight: 700;
+    }
+
+    .tag-input-wrap input {
+      border: 0;
+      background: transparent;
+      min-width: 120px;
+      flex: 1;
+      padding: 4px;
+      box-shadow: none;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: #0f1728;
+      color: #d2deeb;
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .chip:hover {
+      border-color: rgba(14, 165, 233, 0.6);
+    }
+
+    .chip.selected {
+      background: rgba(232, 86, 10, 0.19);
+      border-color: rgba(232, 86, 10, 0.6);
+      color: #ffd5c1;
+    }
+
+    .skills-selected {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #0d1525;
+    }
+
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 34px;
+    }
+
+    .skills-list .tag {
+      cursor: grab;
+      user-select: none;
+    }
+
+    .lang-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr 120px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .lang-meter {
+      height: 9px;
+      border-radius: 999px;
+      background: #15233b;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .lang-meter span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #0ea5e9, #22c55e);
+      transition: width 300ms ease;
+    }
+
+    .counter {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .soft-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .soft-option {
+      border: 1px solid var(--border);
+      background: #0f1728;
+      border-radius: 10px;
+      padding: 9px;
+      cursor: pointer;
+      color: #d8e6f4;
+      font-size: 0.86rem;
+      transition: var(--transition);
+    }
+
+    .soft-option.active {
+      background: rgba(14, 165, 233, 0.18);
+      border-color: rgba(14, 165, 233, 0.65);
+    }
+
+    .preview-shell {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .cv-card {
+      background: #f5f8fc;
+      color: #111827;
+      border-radius: 14px;
+      padding: 24px;
+      min-height: 420px;
+      position: relative;
+      border: 1px solid #d9e4ef;
+    }
+
+    .cv-watermark {
+      position: absolute;
+      right: 16px;
+      bottom: 14px;
+      font-size: 0.74rem;
+      color: #b7c7d8;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .cv-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      border-bottom: 1px solid #d5e0ea;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+
+    .cv-name {
+      font-size: 1.55rem;
+      font-weight: 800;
+      margin: 0 0 4px;
+    }
+
+    .cv-small {
+      color: #334155;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .cv-sec {
+      margin-bottom: 12px;
+    }
+
+    .cv-sec h4 {
+      margin: 0 0 6px;
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      color: #1e3a5f;
+    }
+
+    .cv-item {
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: #1f2937;
+    }
+
+    .cv-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .cv-tag {
+      border: 1px solid #c5d4e3;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.78rem;
+      color: #1f3a57;
+      background: #eef4fa;
+    }
+
+    .preview-side {
+      background: rgba(10, 15, 30, 0.44);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .preview-mini {
+      background: #f7fbff;
+      color: #1f2937;
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid #dce8f3;
+      font-size: 0.84rem;
+    }
+
+    .preview-mini h5 {
+      margin: 0 0 8px;
+      font-size: 0.88rem;
+      color: #1d4f7a;
+    }
+
+    .mission-intro {
+      min-height: calc(100vh - 72px);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .intro-card {
+      max-width: 860px;
+      width: 100%;
+      background: rgba(20, 28, 46, 0.74);
+      border: 1px solid rgba(30, 45, 74, 0.8);
+      border-radius: 20px;
+      padding: 36px 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .intro-card::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      border: 1px solid rgba(232, 86, 10, 0.25);
+      pointer-events: none;
+    }
+
+    .logo {
+      font-size: 1.2rem;
+      color: #ff944d;
+      letter-spacing: 0.2em;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .intro-title {
+      font-size: clamp(1.5rem, 4vw, 2.45rem);
+      margin: 0;
+      line-height: 1.16;
+    }
+
+    .intro-sub {
+      color: #95cdeb;
+      margin-top: 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+
+    .typewriter {
+      margin: 20px auto;
+      max-width: 720px;
+      color: #d0deec;
+      line-height: 1.72;
+      min-height: 132px;
+      text-align: left;
+      border-left: 2px solid rgba(14, 165, 233, 0.45);
+      padding-left: 14px;
+      font-size: 1rem;
+      white-space: pre-wrap;
+    }
+
+    .intro-btn-wrap {
+      margin-top: 18px;
+    }
+
+    .btn.launch {
+      font-size: 1.05rem;
+      padding: 13px 24px;
+      animation: glow 1.6s infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232,86,10,0.45); }
+      50% { box-shadow: 0 0 0 10px rgba(232,86,10,0); }
+    }
+
+    .muted-tiny {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .status-cycle {
+      min-height: 26px;
+      margin-top: 14px;
+      color: #bbdcf3;
+      font-size: 0.96rem;
+      opacity: 0;
+      transition: opacity 260ms ease;
+    }
+
+    .status-cycle.show {
+      opacity: 1;
+    }
+
+    .submission-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #121f37, #070b16 60%);
+      z-index: 210;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .submission-overlay.active {
+      display: flex;
+    }
+
+    .submission-card {
+      width: min(900px, 100%);
+      background: rgba(11, 17, 32, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .upload-bar {
+      height: 14px;
+      background: #0f192d;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .upload-bar > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 120ms linear;
+    }
+
+    .planet {
+      width: 150px;
+      height: 150px;
+      margin: 12px auto;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffb07e, #e8560a 45%, #6b2e13 75%);
+      position: relative;
+      animation: spin 6s linear infinite;
+      box-shadow: 0 0 24px rgba(232, 86, 10, 0.35);
+    }
+
+    .planet::before,
+    .planet::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(130, 53, 21, 0.32);
+    }
+
+    .planet::before {
+      width: 85px;
+      height: 20px;
+      top: 36px;
+      left: 36px;
+      transform: rotate(-15deg);
+    }
+
+    .planet::after {
+      width: 100px;
+      height: 24px;
+      top: 86px;
+      left: 20px;
+      transform: rotate(12deg);
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .assess-grid {
+      text-align: left;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .assess-row {
+      margin-bottom: 12px;
+    }
+
+    .assess-row .label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      color: #dcecfb;
+      font-size: 0.83rem;
+      letter-spacing: 0.05em;
+    }
+
+    .assess-row .meter {
+      height: 10px;
+      border-radius: 999px;
+      background: #111a2e;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .assess-row .meter span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #0ea5e9, #22c55e);
+      transition: width 1.5s ease;
+    }
+
+    .terminal {
+      text-align: left;
+      background: #02060f;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      border-radius: 14px;
+      padding: 16px;
+      color: #57e389;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      min-height: 360px;
+      max-height: 62vh;
+      overflow: auto;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .final-actions {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      opacity: 0;
+      transition: opacity 350ms ease;
+      pointer-events: none;
+    }
+
+    .final-actions.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .split-input {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 8px 0;
+    }
+
+    .small-caption {
+      font-size: 0.77rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .intro-only {
+      display: none;
+    }
+
+    .intro-only.active {
+      display: block;
+    }
+
+    .main-app {
+      display: none;
+    }
+
+    .main-app.active {
+      display: block;
+    }
+
+    .mini-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 7px;
+    }
+
+    .mini-list li {
+      color: #283e58;
+      border-bottom: 1px dashed #d7e3ee;
+      padding-bottom: 4px;
+      font-size: 0.82rem;
+    }
+
+    .tiny-badge {
+      display: inline-block;
+      background: #eef3f8;
+      border: 1px solid #d4e2ef;
+      border-radius: 999px;
+      padding: 3px 8px;
+      color: #26435f;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 1024px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        top: 0;
+      }
+
+      .preview-shell {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app-shell {
+        padding: 14px;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .form-grid,
+      .soft-grid,
+      .split-input,
+      .lang-row {
+        grid-template-columns: 1fr;
+      }
+
+      .progress-stepper {
+        grid-template-columns: repeat(10, minmax(130px, 1fr));
+      }
+
+      .timer-chip {
+        top: 12px;
+        right: 12px;
+        padding: 8px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="timer" class="timer-chip hidden" aria-live="polite">90:00</div>
+  <div id="expiredOverlay" class="expired-overlay hidden" role="status">
+    Transmission window has closed — but your data is saved. Submit when ready.
+  </div>
+
+  <div id="introView" class="intro-only active">
+    <section class="mission-intro">
+      <div class="intro-card">
+        <div class="logo">MARS-1</div>
+        <h1 class="intro-title">MARS-1 SPECIALIST EXPANSION PROGRAMME</h1>
+        <div class="intro-sub">RECRUITMENT CYCLE: 2031-B</div>
+        <div id="typewriterText" class="typewriter" aria-live="polite"></div>
+        <div class="muted-tiny" style="font-size:0.9rem;">Transmission Window: <strong id="introCountdown">90:00</strong></div>
+        <div class="intro-btn-wrap">
+          <button id="accessPortalBtn" class="btn primary launch" type="button">ACCESS PORTAL <i class="fa-solid fa-arrow-right"></i></button>
+          <div class="muted-tiny">Your progress is saved automatically.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="mainApp" class="main-app">
+    <div class="app-shell">
+      <div id="stepper" class="progress-stepper" aria-label="Progress steps"></div>
+
+      <div class="layout">
+        <aside class="sidebar" aria-label="Profile completeness">
+          <h3>Profile Completeness</h3>
+          <div id="completionPct" class="completion">0%</div>
+          <div class="bar" aria-hidden="true"><span id="completionBar"></span></div>
+          <p>Complete all sections to maximize mission readiness. Your data syncs locally on every change.</p>
+        </aside>
+
+        <main class="panel" id="panelRoot">
+          <section id="section-2" class="section" data-step="2">
+            <div class="heading">
+              <p class="eyebrow">Step 2</p>
+              <h2>Personal Information</h2>
+            </div>
+
+            <div class="form-grid">
+              <div class="field" data-required="true">
+                <label for="fullName" class="required">Full Name</label>
+                <input id="fullName" name="fullName" type="text" required />
+                <div class="error-msg">This field is required.</div>
+              </div>
+              <div class="field" data-required="true">
+                <label for="email" class="required">Email Address</label>
+                <input id="email" name="email" type="email" required />
+                <div class="error-msg">Enter a valid email address.</div>
+              </div>
+              <div class="field">
+                <label>Colony Unit ID</label>
+                <div class="badge" id="unitIdBadge"><i class="fa-solid fa-satellite-dish"></i> <span id="unitIdText"></span></div>
+              </div>
+              <div class="field" data-required="true">
+                <label for="specialisation" class="required">Field Specialisation</label>
+                <select id="specialisation" name="specialisation" required>
+                  <option value="">Select specialisation</option>
+                  <option>Geodesy</option>
+                  <option>Geomatics</option>
+                  <option>Remote Sensing</option>
+                  <option>Cartography</option>
+                  <option>Land Surveying</option>
+                  <option>GIS Analysis</option>
+                  <option>Navigation Systems</option>
+                  <option>Other</option>
+                </select>
+                <div class="error-msg">Please select a specialisation.</div>
+              </div>
+              <div class="field">
+                <label for="university">University</label>
+                <input id="university" name="university" type="text" />
+              </div>
+              <div class="field">
+                <label for="country">Country of Origin</label>
+                <input id="country" name="country" type="text" />
+              </div>
+              <div class="field full">
+                <label for="linkedin">LinkedIn URL</label>
+                <input id="linkedin" name="linkedin" type="text" placeholder="https://www.linkedin.com/in/your-profile" />
+              </div>
+              <div class="field full">
+                <label for="photo">Profile Photo Upload (optional)</label>
+                <div class="photo-upload-wrap">
+                  <div class="photo-preview" id="photoPreview">No Photo</div>
+                  <input id="photo" name="photo" type="file" accept="image/*" />
+                </div>
+              </div>
+            </div>
+
+            <div class="nav">
+              <span></span>
+              <button type="button" class="btn primary" data-next="3">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-3" class="section" data-step="3">
+            <div class="heading">
+              <p class="eyebrow">Step 3</p>
+              <h2>CANDIDATE PROFILE STATEMENT</h2>
+            </div>
+            <div class="field full">
+              <label for="summary">Professional Summary</label>
+              <textarea id="summary" name="summary" rows="6" placeholder="Write your mission-ready professional statement..."></textarea>
+              <div id="summaryCounter" class="word-counter">0 words</div>
+            </div>
+
+            <div class="helper">
+              <details>
+                <summary>NEED HELP? USE THIS FRAME <i class="fa-solid fa-chevron-down"></i></summary>
+                <p class="subtle">I am a [adjective] [Geodesy/Geomatics] graduate with experience in [area 1] and [area 2]. During my degree, I [verb + achievement]. I am particularly interested in [specialisation] and I am looking for an opportunity to [goal].</p>
+                <button id="copyFrameBtn" type="button" class="btn small outline">COPY FRAME</button>
+              </details>
+            </div>
+
+            <div class="nav">
+              <button type="button" class="btn" data-back="2"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="btn primary" data-next="4">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-4" class="section" data-step="4">
+            <div class="heading">
+              <p class="eyebrow">Step 4</p>
+              <h2>ACADEMIC RECORD</h2>
+            </div>
+            <div id="educationContainer"></div>
+            <button id="addEducationBtn" type="button" class="btn outline">+ ADD ANOTHER QUALIFICATION</button>
+
+            <div class="nav">
+              <button type="button" class="btn" data-back="3"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="btn primary" data-next="5">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-5" class="section" data-step="5">
+            <div class="heading">
+              <p class="eyebrow">Step 5</p>
+              <h2>FIELD OPERATIONS LOG</h2>
+              <p class="subtle">Document your academic projects, research, fieldwork, and laboratory work as professional mission entries.</p>
+            </div>
+            <div id="projectsContainer"></div>
+            <button id="addProjectBtn" type="button" class="btn outline">+ LOG NEW MISSION ENTRY</button>
+
+            <div class="nav">
+              <button type="button" class="btn" data-back="4"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="btn primary" data-next="6">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-6" class="section" data-step="6">
+            <div class="heading">
+              <p class="eyebrow">Step 6</p>
+              <h2>TECHNICAL COMPETENCY MATRIX</h2>
+            </div>
+            <div id="skillsGroups"></div>
+            <div class="field full" style="margin-top:12px;">
+              <label for="customSkillInput">Add custom skill</label>
+              <input id="customSkillInput" type="text" placeholder="Type skill and press Enter" />
+            </div>
+
+            <div class="skills-selected">
+              <h3 style="font-size:0.9rem; margin:0 0 10px; color:#dff1ff;">YOUR SELECTED SKILLS</h3>
+              <div id="selectedSkillsList" class="skills-list"></div>
+            </div>
+
+            <div class="nav">
+              <button type="button" class="btn" data-back="5"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="btn primary" data-next="7">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-7" class="section" data-step="7">
+            <div class="heading">
+              <p class="eyebrow">Step 7</p>
+              <h2>COMMUNICATION PROTOCOLS</h2>
+            </div>
+            <div id="languagesContainer"></div>
+            <button id="addLanguageBtn" type="button" class="btn outline">+ ADD LANGUAGE</button>
+
+            <div class="nav">
+              <button type="button" class="btn" data-back="6"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="btn primary" data-next="8">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-8" class="section" data-step="8">
+            <div class="heading">
+              <p class="eyebrow">Step 8</p>
+              <h2>INTERPERSONAL COMPETENCIES</h2>
+            </div>
+            <div id="softSkillsWrap" class="soft-grid"></div>
+            <div id="softCounter" class="counter">0/5 selected</div>
+            <div class="field full" style="margin-top:12px;">
+              <label for="customSoftSkill">Add your own (optional)</label>
+              <input id="customSoftSkill" type="text" />
+            </div>
+
+            <div class="nav">
+              <button type="button" class="btn" data-back="7"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button type="button" class="btn primary" data-next="9">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-9" class="section" data-step="9">
+            <div class="heading">
+              <p class="eyebrow">Step 9</p>
+              <h2>Preview & Review</h2>
+            </div>
+            <div class="preview-shell">
+              <div class="cv-card" id="cvPreview"></div>
+              <aside class="preview-side">
+                <div class="preview-mini" id="livePanel"></div>
+              </aside>
+            </div>
+
+            <div class="nav">
+              <button type="button" class="btn" data-back="2"><i class="fa-solid fa-arrow-left"></i> EDIT MY APPLICATION</button>
+              <button type="button" class="btn primary" data-next="10">SUBMIT APPLICATION <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section id="section-10" class="section" data-step="10">
+            <div class="heading">
+              <p class="eyebrow">Step 10</p>
+              <h2>Ready for Submission</h2>
+              <p class="subtle">Click below to begin secure transmission sequence.</p>
+            </div>
+            <button id="startSubmissionBtn" class="btn primary" type="button">INITIATE MARS-1 TRANSMISSION</button>
+            <div class="nav">
+              <button type="button" class="btn" data-back="9"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+          </section>
+        </main>
+
+        <aside class="live-sidebar" aria-label="Live profile preview">
+          <h3>Live Profile Preview</h3>
+          <div class="preview-mini" id="globalLivePanel"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div id="submissionOverlay" class="submission-overlay" aria-live="polite" aria-modal="true" role="dialog">
+    <div class="submission-card">
+      <div id="submissionContent"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "mars1.portal.data.v1";
+      const TIMER_KEY = "mars1.portal.timer.v1";
+      const TOTAL_SECONDS = 90 * 60;
+      const MAX_PROJECTS = 6;
+      const MAX_LANGUAGES = 6;
+      const STEP_LABELS = [
+        "Mission", "Personal", "Summary", "Education", "Field Log", "Skills", "Languages", "Soft Skills", "Preview", "Submit"
+      ];
+
+      const SOFT_SKILLS = [
+        "Problem-solving under pressure",
+        "Cross-cultural communication",
+        "Team leadership",
+        "Attention to detail",
+        "Adaptability",
+        "Data-driven decision making",
+        "Project management",
+        "Technical communication",
+        "Independent research",
+        "Time management",
+        "Creative thinking",
+        "Conflict resolution"
+      ];
+
+      const SKILL_GROUPS = {
+        "GEOSPATIAL SOFTWARE": ["QGIS", "ArcGIS", "AutoCAD", "Global Mapper", "Agisoft Metashape", "Trimble Business Center"],
+        "PROGRAMMING": ["Python", "MATLAB", "R", "SQL"],
+        "FIELD EQUIPMENT": ["GNSS receivers", "Total Station", "UAV/Drone operation", "Terrestrial laser scanning"],
+        "DATA & REPORTING": ["Microsoft Office", "Google Suite", "Technical report writing", "Data visualisation"]
+      };
+
+      const PROJECT_TOOL_SUGGESTIONS = [
+        "QGIS", "ArcGIS", "AutoCAD", "GNSS receivers", "Python", "Drone surveying", "Total station", "Photogrammetry", "Remote sensing", "GIS", "Matlab", "Field data collection", "Statistical analysis", "Technical reporting"
+      ];
+
+      const ACTION_VERBS = [
+        "Conducted", "Led", "Developed", "Analysed", "Designed", "Implemented", "Managed", "Delivered", "Built", "Coordinated", "Produced", "Optimised", "Validated", "Integrated", "Processed"
+      ];
+
+      const LEVEL_MAP = {
+        Native: 100,
+        C2: 95,
+        C1: 85,
+        B2: 75,
+        B1: 65,
+        A2: 50,
+        A1: 35
+      };
+
+      const introView = document.getElementById("introView");
+      const mainApp = document.getElementById("mainApp");
+      const timerChip = document.getElementById("timer");
+      const expiredOverlay = document.getElementById("expiredOverlay");
+      const stepperEl = document.getElementById("stepper");
+      const completionPctEl = document.getElementById("completionPct");
+      const completionBarEl = document.getElementById("completionBar");
+      const panelRoot = document.getElementById("panelRoot");
+      const submissionOverlay = document.getElementById("submissionOverlay");
+      const submissionContent = document.getElementById("submissionContent");
+
+      let timerInterval = null;
+      let typewriterInterval = null;
+      let introCountdownInterval = null;
+      let docxReadyPromise = null;
+      let currentStep = 2;
+
+      const state = {
+        appStarted: false,
+        currentStep: 2,
+        unitId: "",
+        personal: {
+          fullName: "",
+          email: "",
+          specialisation: "",
+          university: "",
+          country: "",
+          linkedin: "",
+          photoDataUrl: ""
+        },
+        summary: "",
+        education: [],
+        projects: [],
+        technicalSkills: [],
+        languages: [{ language: "English", level: "C1" }],
+        softSkills: [],
+        customSoftSkill: ""
+      };
+
+      function uid() {
+        return Math.random().toString(36).slice(2, 11);
+      }
+
+      function createUnitId() {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let value = "";
+        for (let i = 0; i < 8; i++) value += chars[Math.floor(Math.random() * chars.length)];
+        return `UNIT-${value}`;
+      }
+
+      function escapeHtml(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          Object.assign(state, parsed);
+          if (!state.personal) state.personal = {};
+          state.personal = {
+            fullName: "",
+            email: "",
+            specialisation: "",
+            university: "",
+            country: "",
+            linkedin: "",
+            photoDataUrl: "",
+            ...state.personal
+          };
+          if (!Array.isArray(state.education)) state.education = [];
+          state.education = state.education.map((e) => ({
+            id: e.id || uid(),
+            institution: e.institution || "",
+            degree: e.degree || "",
+            startYear: e.startYear || "",
+            endYear: e.endYear || "",
+            present: !!e.present,
+            grade: e.grade || "",
+            modules: Array.isArray(e.modules) ? e.modules : []
+          }));
+          if (!Array.isArray(state.projects)) state.projects = [];
+          state.projects = state.projects.map((p) => ({
+            id: p.id || uid(),
+            title: p.title || "",
+            role: p.role || "",
+            period: p.period || "",
+            tools: Array.isArray(p.tools) ? p.tools : [],
+            actionVerb: p.actionVerb || "Conducted",
+            did: p.did || "",
+            toolsText: p.toolsText || "",
+            outcome: p.outcome || "",
+            bullet: p.bullet || ""
+          }));
+          if (!Array.isArray(state.technicalSkills)) state.technicalSkills = [];
+          if (!Array.isArray(state.languages) || !state.languages.length) state.languages = [{ language: "English", level: "C1" }];
+          state.languages = state.languages.map((l) => ({
+            language: l.language || "",
+            level: l.level || "B2"
+          }));
+          if (!Array.isArray(state.softSkills)) state.softSkills = [];
+          if (typeof state.customSoftSkill !== "string") state.customSoftSkill = "";
+        } catch (err) {
+          console.error("Failed to load state", err);
+        }
+      }
+
+      function buildStepper() {
+        stepperEl.innerHTML = "";
+        STEP_LABELS.forEach((label, i) => {
+          const step = i + 1;
+          const div = document.createElement("div");
+          div.className = "step-pill";
+          div.textContent = `${step}. ${label}`;
+          if (step < currentStep) div.classList.add("done");
+          if (step === currentStep) div.classList.add("active");
+          stepperEl.appendChild(div);
+        });
+      }
+
+      function showSection(step) {
+        if (step < 2 || step > 10) return;
+        currentStep = step;
+        state.currentStep = step;
+        saveState();
+        document.querySelectorAll(".section").forEach((el) => {
+          el.classList.toggle("active", el.id === `section-${step}`);
+        });
+        if (step === 9) {
+          renderPreview();
+        }
+        buildStepper();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function startApp() {
+        clearInterval(introCountdownInterval);
+        state.appStarted = true;
+        introView.classList.remove("active");
+        mainApp.classList.add("active");
+        timerChip.classList.remove("hidden");
+        saveState();
+        ensureTimer();
+        showSection(currentStep);
+      }
+
+      function ensureUnitId() {
+        if (!state.unitId) {
+          state.unitId = createUnitId();
+        }
+        document.getElementById("unitIdText").textContent = state.unitId;
+      }
+
+      function wirePersonalFields() {
+        const map = {
+          fullName: "fullName",
+          email: "email",
+          specialisation: "specialisation",
+          university: "university",
+          country: "country",
+          linkedin: "linkedin"
+        };
+
+        Object.entries(map).forEach(([key, id]) => {
+          const input = document.getElementById(id);
+          input.value = state.personal[key] || "";
+          input.addEventListener("input", () => {
+            state.personal[key] = input.value;
+            saveState();
+            updateCompleteness();
+            updateLiveMiniPreview();
+            if (key === "fullName" || key === "specialisation") renderPreview();
+          });
+        });
+
+        const photoInput = document.getElementById("photo");
+        photoInput.addEventListener("change", (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function () {
+            state.personal.photoDataUrl = reader.result;
+            saveState();
+            renderPhotoPreview();
+            renderPreview();
+          };
+          reader.readAsDataURL(file);
+        });
+        renderPhotoPreview();
+      }
+
+      function renderPhotoPreview() {
+        const box = document.getElementById("photoPreview");
+        if (state.personal.photoDataUrl) {
+          box.innerHTML = `<img src="${state.personal.photoDataUrl}" alt="Profile photo preview" />`;
+        } else {
+          box.textContent = "No Photo";
+        }
+      }
+
+      function wireSummary() {
+        const summary = document.getElementById("summary");
+        const counter = document.getElementById("summaryCounter");
+        summary.value = state.summary || "";
+
+        function update() {
+          state.summary = summary.value;
+          const words = summary.value.trim() ? summary.value.trim().split(/\s+/).length : 0;
+          counter.textContent = `${words} words`;
+          counter.classList.toggle("over", words > 150);
+          saveState();
+          updateCompleteness();
+          renderPreview();
+        }
+
+        summary.addEventListener("input", update);
+        update();
+
+        document.getElementById("copyFrameBtn").addEventListener("click", () => {
+          summary.value = "I am a motivated Geomatics graduate with experience in [area 1] and [area 2]. During my degree, I [verb + achievement]. I am particularly interested in [specialisation] and I am looking for an opportunity to [goal].";
+          summary.dispatchEvent(new Event("input"));
+          summary.focus();
+        });
+      }
+
+      function makeTagInput(container, values, onChange, suggestions) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "tag-input-wrap";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Type and press Enter";
+        wrapper.appendChild(input);
+
+        function renderTags() {
+          wrapper.querySelectorAll(".tag").forEach((tag) => tag.remove());
+          values.forEach((tagText, idx) => {
+            const tag = document.createElement("span");
+            tag.className = "tag";
+            tag.innerHTML = `${escapeHtml(tagText)} <span class="x" data-idx="${idx}">&times;</span>`;
+            wrapper.insertBefore(tag, input);
+          });
+        }
+
+        wrapper.addEventListener("click", (e) => {
+          if (e.target.classList.contains("x")) {
+            const idx = Number(e.target.dataset.idx);
+            values.splice(idx, 1);
+            renderTags();
+            onChange(values);
+          }
+        });
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const val = input.value.trim();
+            if (!val) return;
+            if (!values.includes(val)) {
+              values.push(val);
+              renderTags();
+              onChange(values);
+            }
+            input.value = "";
+          }
+        });
+
+        if (Array.isArray(suggestions) && suggestions.length) {
+          const chips = document.createElement("div");
+          chips.className = "chips";
+          suggestions.forEach((s) => {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "chip";
+            chip.textContent = s;
+            chip.addEventListener("click", () => {
+              if (!values.includes(s)) {
+                values.push(s);
+                renderTags();
+                onChange(values);
+              }
+            });
+            chips.appendChild(chip);
+          });
+          container.appendChild(chips);
+        }
+
+        container.appendChild(wrapper);
+        renderTags();
+      }
+
+      function addEducationEntry(entry) {
+        const data = entry || {
+          id: uid(),
+          institution: "",
+          degree: "",
+          startYear: "",
+          endYear: "",
+          present: false,
+          grade: "",
+          modules: []
+        };
+        if (!state.education.find((e) => e.id === data.id)) {
+          state.education.push(data);
+        }
+        renderEducation();
+      }
+
+      function renderEducation() {
+        const container = document.getElementById("educationContainer");
+        container.innerHTML = "";
+
+        state.education.forEach((entry) => {
+          const card = document.createElement("div");
+          card.className = "entry-card";
+          card.innerHTML = `
+            <button type="button" class="entry-remove" title="Remove" data-remove="${entry.id}">&times;</button>
+            <div class="form-grid">
+              <div class="field"><label>Institution name</label><input type="text" data-field="institution" value="${escapeHtml(entry.institution)}" /></div>
+              <div class="field"><label>Degree title</label><input type="text" data-field="degree" value="${escapeHtml(entry.degree)}" /></div>
+              <div class="field"><label>Start year</label><input type="number" min="1900" max="2100" data-field="startYear" value="${escapeHtml(entry.startYear)}" /></div>
+              <div class="field">
+                <label>End year</label>
+                <input type="number" min="1900" max="2100" data-field="endYear" value="${escapeHtml(entry.endYear)}" ${entry.present ? "disabled" : ""} />
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-top:6px; color:var(--muted);"><input type="checkbox" data-field="present" ${entry.present ? "checked" : ""} /> Present</label>
+              </div>
+              <div class="field"><label>Final grade / GPA</label><input type="text" data-field="grade" value="${escapeHtml(entry.grade)}" /></div>
+              <div class="field full"><label>Relevant modules</label><div class="modules-holder"></div></div>
+            </div>
+          `;
+
+          card.addEventListener("input", (e) => {
+            const field = e.target.dataset.field;
+            if (!field) return;
+            if (field === "present") {
+              entry.present = e.target.checked;
+              if (entry.present) {
+                entry.endYear = "";
+              }
+              renderEducation();
+              saveState();
+              updateCompleteness();
+              renderPreview();
+              return;
+            }
+            entry[field] = e.target.value;
+            saveState();
+            updateCompleteness();
+            renderPreview();
+          });
+
+          card.querySelector("[data-remove]").addEventListener("click", () => {
+            state.education = state.education.filter((x) => x.id !== entry.id);
+            saveState();
+            renderEducation();
+            updateCompleteness();
+            renderPreview();
+          });
+
+          const moduleHolder = card.querySelector(".modules-holder");
+          makeTagInput(moduleHolder, entry.modules, () => {
+            saveState();
+            updateCompleteness();
+            renderPreview();
+          });
+
+          container.appendChild(card);
+        });
+
+        if (!state.education.length) {
+          const empty = document.createElement("p");
+          empty.className = "subtle";
+          empty.textContent = "No qualifications added yet.";
+          container.appendChild(empty);
+        }
+      }
+
+      function projectBulletPreview(project) {
+        const action = project.actionVerb || "Conducted";
+        const did = (project.did || "").trim() || "a geospatial task";
+        const didWithVerb = new RegExp(`^${action}\\b`, "i").test(did) ? did : `${action} ${did}`;
+        const tools = (project.toolsText || "").trim() || "relevant tools";
+        const outcome = (project.outcome || "").trim() || "a measurable output";
+        return `${didWithVerb} using ${tools}, resulting in ${outcome}.`;
+      }
+
+      function addProjectEntry(entry) {
+        if (state.projects.length >= MAX_PROJECTS) return;
+        const data = entry || {
+          id: uid(),
+          title: "",
+          role: "",
+          period: "",
+          tools: [],
+          actionVerb: "Conducted",
+          did: "",
+          toolsText: "",
+          outcome: "",
+          bullet: ""
+        };
+        if (!data.bullet) data.bullet = projectBulletPreview(data);
+        if (!state.projects.find((p) => p.id === data.id)) {
+          state.projects.push(data);
+        }
+        renderProjects();
+      }
+
+      function renderProjects() {
+        const container = document.getElementById("projectsContainer");
+        container.innerHTML = "";
+        state.projects.forEach((p) => {
+          const card = document.createElement("div");
+          card.className = "entry-card";
+          card.innerHTML = `
+            <button type="button" class="entry-remove" title="Remove" data-remove="${p.id}">&times;</button>
+            <div class="form-grid">
+              <div class="field"><label>Project / Mission Title</label><input data-field="title" type="text" value="${escapeHtml(p.title)}" /></div>
+              <div class="field"><label>Your Role</label><input data-field="role" type="text" value="${escapeHtml(p.role)}" /></div>
+              <div class="field"><label>Year / Period</label><input data-field="period" type="text" value="${escapeHtml(p.period)}" /></div>
+              <div class="field full"><label>Tools & Methods Used</label><div class="project-tools"></div></div>
+              <div class="field full">
+                <label>Bullet Point Builder</label>
+                <div class="split-input">
+                  <input data-field="did" type="text" placeholder="What did you DO?" value="${escapeHtml(p.did)}" />
+                  <input data-field="toolsText" type="text" placeholder="What TOOLS or METHODS did you use?" value="${escapeHtml(p.toolsText)}" />
+                  <input data-field="outcome" type="text" placeholder="What was the OUTCOME or RESULT?" value="${escapeHtml(p.outcome)}" />
+                </div>
+                <div class="field" style="margin-top:8px;">
+                  <label>Add Action Verb</label>
+                  <select data-field="actionVerb">
+                    ${ACTION_VERBS.map(v => `<option ${v === p.actionVerb ? "selected" : ""}>${v}</option>`).join("")}
+                  </select>
+                </div>
+                <div class="small-caption">Preview / editable bullet</div>
+                <textarea data-field="bullet" rows="2">${escapeHtml(p.bullet || projectBulletPreview(p))}</textarea>
+              </div>
+            </div>
+          `;
+
+          const recalc = () => {
+            p.bullet = projectBulletPreview(p);
+            const bullet = card.querySelector('textarea[data-field="bullet"]');
+            if (document.activeElement !== bullet) {
+              bullet.value = p.bullet;
+            }
+          };
+
+          const handleProjectInput = (e) => {
+            const field = e.target.dataset.field;
+            if (!field) return;
+            p[field] = e.target.value;
+            if (field === "actionVerb") {
+              const didInput = card.querySelector('input[data-field="did"]');
+              const stripped = (p.did || "").replace(new RegExp(`^(${ACTION_VERBS.join("|")})\\s+`, "i"), "").trim();
+              p.did = `${p.actionVerb} ${stripped}`.trim();
+              didInput.value = p.did;
+            }
+            if (["did", "toolsText", "outcome", "actionVerb"].includes(field)) {
+              recalc();
+            }
+            saveState();
+            updateCompleteness();
+            renderPreview();
+          };
+
+          card.addEventListener("input", handleProjectInput);
+          card.addEventListener("change", handleProjectInput);
+
+          card.querySelector("[data-remove]").addEventListener("click", () => {
+            state.projects = state.projects.filter((x) => x.id !== p.id);
+            saveState();
+            renderProjects();
+            updateCompleteness();
+            renderPreview();
+          });
+
+          const toolsBox = card.querySelector(".project-tools");
+          makeTagInput(toolsBox, p.tools, () => {
+            saveState();
+            updateCompleteness();
+            renderPreview();
+          }, PROJECT_TOOL_SUGGESTIONS);
+
+          container.appendChild(card);
+        });
+
+        document.getElementById("addProjectBtn").disabled = state.projects.length >= MAX_PROJECTS;
+
+        if (!state.projects.length) {
+          const empty = document.createElement("p");
+          empty.className = "subtle";
+          empty.textContent = "No mission entries yet.";
+          container.appendChild(empty);
+        }
+      }
+
+      function renderSkillsMatrix() {
+        const host = document.getElementById("skillsGroups");
+        host.innerHTML = "";
+
+        Object.entries(SKILL_GROUPS).forEach(([group, skills]) => {
+          const block = document.createElement("div");
+          block.className = "helper";
+          block.innerHTML = `<div style="font-weight:700; color:#dbeeff; font-size:0.82rem; letter-spacing:0.06em;">${group}</div>`;
+          const chips = document.createElement("div");
+          chips.className = "chips";
+          skills.forEach((skill) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "chip" + (state.technicalSkills.includes(skill) ? " selected" : "");
+            btn.textContent = skill;
+            btn.addEventListener("click", () => {
+              toggleSkill(skill);
+              renderSkillsMatrix();
+              renderSelectedSkills();
+              saveState();
+              updateCompleteness();
+              renderPreview();
+            });
+            chips.appendChild(btn);
+          });
+          block.appendChild(chips);
+          host.appendChild(block);
+        });
+      }
+
+      function toggleSkill(skill) {
+        const idx = state.technicalSkills.indexOf(skill);
+        if (idx > -1) state.technicalSkills.splice(idx, 1);
+        else state.technicalSkills.push(skill);
+      }
+
+      function renderSelectedSkills() {
+        const list = document.getElementById("selectedSkillsList");
+        list.innerHTML = "";
+        state.technicalSkills.forEach((s, index) => {
+          const tag = document.createElement("span");
+          tag.className = "tag";
+          tag.draggable = true;
+          tag.dataset.index = index;
+          tag.innerHTML = `${escapeHtml(s)} <span class="x" data-remove-skill="${escapeHtml(s)}">&times;</span>`;
+
+          tag.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", String(index));
+          });
+
+          tag.addEventListener("dragover", (e) => e.preventDefault());
+          tag.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const from = Number(e.dataTransfer.getData("text/plain"));
+            const to = Number(tag.dataset.index);
+            if (Number.isNaN(from) || Number.isNaN(to) || from === to) return;
+            const moved = state.technicalSkills.splice(from, 1)[0];
+            state.technicalSkills.splice(to, 0, moved);
+            saveState();
+            renderSelectedSkills();
+            renderPreview();
+          });
+
+          list.appendChild(tag);
+        });
+
+        list.onclick = (e) => {
+          const skill = e.target.dataset.removeSkill;
+          if (!skill) return;
+          state.technicalSkills = state.technicalSkills.filter((x) => x !== skill);
+          saveState();
+          renderSelectedSkills();
+          renderSkillsMatrix();
+          updateCompleteness();
+          renderPreview();
+        };
+      }
+
+      function addLanguageEntry(entry) {
+        if (state.languages.length >= MAX_LANGUAGES) return;
+        const data = entry || { language: "", level: "B2" };
+        state.languages.push(data);
+        renderLanguages();
+      }
+
+      function renderLanguages() {
+        const container = document.getElementById("languagesContainer");
+        container.innerHTML = "";
+
+        state.languages.forEach((lang, idx) => {
+          const row = document.createElement("div");
+          row.className = "entry-card";
+          row.innerHTML = `
+            ${idx === 0 ? "" : `<button type="button" class="entry-remove" data-remove="${idx}">&times;</button>`}
+            <div class="lang-row">
+              <div class="field" style="margin:0;"><label>Language</label>
+                <input type="text" data-field="language" value="${escapeHtml(lang.language || "")}" list="languageSuggestions" />
+              </div>
+              <div class="field" style="margin:0;"><label>Level</label>
+                <select data-field="level">
+                  ${["Native", "C2", "C1", "B2", "B1", "A2", "A1"].map(l => `<option ${l === lang.level ? "selected" : ""}>${l}</option>`).join("")}
+                </select>
+              </div>
+              <div>
+                <div class="small-caption" style="margin-top:0;">Proficiency</div>
+                <div class="lang-meter"><span style="width:${LEVEL_MAP[lang.level] || 0}%"></span></div>
+              </div>
+            </div>
+          `;
+
+          row.addEventListener("input", (e) => {
+            const f = e.target.dataset.field;
+            lang[f] = e.target.value;
+            if (f === "level") {
+              const meter = row.querySelector(".lang-meter span");
+              meter.style.width = `${LEVEL_MAP[lang.level] || 0}%`;
+            }
+            saveState();
+            updateCompleteness();
+            renderPreview();
+          });
+
+          const rm = row.querySelector("[data-remove]");
+          if (rm) {
+            rm.addEventListener("click", () => {
+              state.languages.splice(idx, 1);
+              saveState();
+              renderLanguages();
+              updateCompleteness();
+              renderPreview();
+            });
+          }
+
+          container.appendChild(row);
+        });
+
+        document.getElementById("addLanguageBtn").disabled = state.languages.length >= MAX_LANGUAGES;
+      }
+
+      function renderSoftSkills() {
+        const host = document.getElementById("softSkillsWrap");
+        host.innerHTML = "";
+
+        SOFT_SKILLS.forEach((skill) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "soft-option" + (state.softSkills.includes(skill) ? " active" : "");
+          btn.textContent = skill;
+          btn.addEventListener("click", () => {
+            const exists = state.softSkills.includes(skill);
+            if (exists) {
+              state.softSkills = state.softSkills.filter((s) => s !== skill);
+            } else if (state.softSkills.length < 5) {
+              state.softSkills.push(skill);
+            }
+            saveState();
+            renderSoftSkills();
+            updateCompleteness();
+            renderPreview();
+          });
+          host.appendChild(btn);
+        });
+
+        document.getElementById("softCounter").textContent = `${state.softSkills.length}/5 selected`;
+      }
+
+      function updateLiveMiniPreview() {
+        const lp = document.getElementById("livePanel");
+        const glp = document.getElementById("globalLivePanel");
+        const template = () => {
+          const name = state.personal.fullName || "Candidate Name";
+          const spec = state.personal.specialisation || "Specialisation";
+          const email = state.personal.email || "email@example.com";
+          return `
+            <h5>Live Candidate Snapshot</h5>
+            <ul class="mini-list">
+              <li><span class="tiny-badge">ID</span>${escapeHtml(state.unitId || "UNIT-XXXXXX")}</li>
+              <li><span class="tiny-badge">NAME</span>${escapeHtml(name)}</li>
+              <li><span class="tiny-badge">SPEC</span>${escapeHtml(spec)}</li>
+              <li><span class="tiny-badge">EMAIL</span>${escapeHtml(email)}</li>
+              <li><span class="tiny-badge">SKILLS</span>${state.technicalSkills.length} selected</li>
+              <li><span class="tiny-badge">LOGS</span>${state.projects.length} mission entries</li>
+            </ul>
+          `;
+        };
+        if (lp) lp.innerHTML = template();
+        if (glp) glp.innerHTML = template();
+      }
+
+      function renderPreview() {
+        const card = document.getElementById("cvPreview");
+        if (!card) return;
+
+        const p = state.personal;
+        const photo = p.photoDataUrl ? `<img src="${p.photoDataUrl}" alt="Photo" style="width:76px;height:76px;border-radius:999px;object-fit:cover;border:2px solid #d2e2ef;">` : "";
+
+        const eduHtml = state.education.map((e) => `
+          <div class="cv-item"><strong>${escapeHtml(e.degree || "Degree")}</strong> — ${escapeHtml(e.institution || "Institution")}<br>
+          ${escapeHtml(e.startYear || "-")} - ${e.present ? "Present" : escapeHtml(e.endYear || "-")}${e.grade ? ` | Grade: ${escapeHtml(e.grade)}` : ""}
+          ${e.modules && e.modules.length ? `<div style="margin-top:4px;">${e.modules.map((m) => `<span class=\"cv-tag\">${escapeHtml(m)}</span>`).join(" ")}</div>` : ""}
+          </div>
+        `).join("") || `<div class="cv-item">No education entries yet.</div>`;
+
+        const projectHtml = state.projects.map((pr) => `
+          <div class="cv-item"><strong>${escapeHtml(pr.title || "Mission Entry")}</strong> (${escapeHtml(pr.period || "Period")})<br>
+          ${escapeHtml(pr.role || "Role")}<br>
+          <ul style="margin:6px 0 0 18px; padding:0;"><li>${escapeHtml(pr.bullet || projectBulletPreview(pr))}</li></ul>
+          ${pr.tools && pr.tools.length ? `<div style="margin-top:4px;">${pr.tools.map((t) => `<span class=\"cv-tag\">${escapeHtml(t)}</span>`).join(" ")}</div>` : ""}
+          </div>
+        `).join("") || `<div class="cv-item">No mission entries yet.</div>`;
+
+        const skillsHtml = state.technicalSkills.length
+          ? `<div class="cv-tags">${state.technicalSkills.map((s) => `<span class="cv-tag">${escapeHtml(s)}</span>`).join("")}</div>`
+          : `<div class="cv-item">No skills selected yet.</div>`;
+
+        const langHtml = state.languages.map((l) => `
+          <div class="cv-item" style="display:grid; grid-template-columns: 1fr 90px 100px; gap:8px; align-items:center;">
+            <span>${escapeHtml(l.language || "Language")}</span>
+            <span>${escapeHtml(l.level || "-")}</span>
+            <span style="display:block; height:8px; background:#d8e4ef; border-radius:999px; overflow:hidden;"><span style="display:block; height:100%; width:${LEVEL_MAP[l.level] || 0}%; background:#3b82f6;"></span></span>
+          </div>
+        `).join("") || `<div class="cv-item">No languages listed.</div>`;
+
+        const soft = [...state.softSkills];
+        if (state.customSoftSkill.trim()) soft.push(state.customSoftSkill.trim());
+
+        card.innerHTML = `
+          <div class="cv-header">
+            <div>
+              <div class="cv-name">${escapeHtml(p.fullName || "Candidate Name")}</div>
+              <div class="cv-small">
+                <strong>${escapeHtml(state.unitId || "UNIT-XXXX")}</strong><br>
+                ${escapeHtml(p.specialisation || "Specialisation")}<br>
+                ${escapeHtml(p.email || "email@example.com")} ${p.linkedin ? `| ${escapeHtml(p.linkedin)}` : ""}
+              </div>
+            </div>
+            <div>${photo}</div>
+          </div>
+
+          <section class="cv-sec">
+            <h4>PROFILE STATEMENT</h4>
+            <div class="cv-item">${escapeHtml(state.summary || "No profile statement yet.")}</div>
+          </section>
+
+          <section class="cv-sec"><h4>EDUCATION</h4>${eduHtml}</section>
+          <section class="cv-sec"><h4>FIELD OPERATIONS LOG</h4>${projectHtml}</section>
+          <section class="cv-sec"><h4>TECHNICAL SKILLS</h4>${skillsHtml}</section>
+          <section class="cv-sec"><h4>LANGUAGES</h4>${langHtml}</section>
+          <section class="cv-sec"><h4>SOFT SKILLS</h4>${soft.length ? `<div class="cv-tags">${soft.map((s) => `<span class="cv-tag">${escapeHtml(s)}</span>`).join("")}</div>` : `<div class="cv-item">No soft skills selected.</div>`}</section>
+
+          <div class="cv-watermark">MARS-1 CAREER PORTAL</div>
+        `;
+
+        updateLiveMiniPreview();
+      }
+
+      function updateCompleteness() {
+        const checks = [
+          !!state.personal.fullName.trim(),
+          !!state.personal.email.trim(),
+          !!state.personal.specialisation.trim(),
+          !!state.summary.trim(),
+          state.education.length > 0,
+          state.projects.length > 0,
+          state.technicalSkills.length > 0,
+          state.languages.filter((l) => (l.language || "").trim()).length > 0,
+          state.softSkills.length > 0 || !!state.customSoftSkill.trim()
+        ];
+
+        const done = checks.filter(Boolean).length;
+        const pct = Math.round((done / checks.length) * 100);
+        completionPctEl.textContent = `${pct}%`;
+        completionBarEl.style.width = `${pct}%`;
+      }
+
+      function validateStep(step) {
+        const section = document.getElementById(`section-${step}`);
+        if (!section) return true;
+
+        section.querySelectorAll(".field.invalid").forEach((f) => f.classList.remove("invalid"));
+        section.querySelectorAll(".error").forEach((x) => x.classList.remove("error"));
+
+        if (step === 2) {
+          let ok = true;
+          const required = [
+            { id: "fullName", valid: (v) => v.trim().length > 0 },
+            { id: "email", valid: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+            { id: "specialisation", valid: (v) => !!v.trim() }
+          ];
+
+          required.forEach((r) => {
+            const input = document.getElementById(r.id);
+            const field = input.closest(".field");
+            if (!r.valid(input.value || "")) {
+              ok = false;
+              input.classList.add("error");
+              field.classList.add("invalid");
+            }
+          });
+          return ok;
+        }
+
+        return true;
+      }
+
+      function setupNavigation() {
+        panelRoot.addEventListener("click", (e) => {
+          const next = e.target.closest("[data-next]");
+          const back = e.target.closest("[data-back]");
+          if (next) {
+            const target = Number(next.dataset.next);
+            if (validateStep(currentStep)) {
+              if (target === 10) {
+                showSection(10);
+              } else {
+                showSection(target);
+              }
+            }
+          }
+          if (back) {
+            showSection(Number(back.dataset.back));
+          }
+        });
+      }
+
+      function restoreInputsFromState() {
+        document.getElementById("fullName").value = state.personal.fullName || "";
+        document.getElementById("email").value = state.personal.email || "";
+        document.getElementById("specialisation").value = state.personal.specialisation || "";
+        document.getElementById("university").value = state.personal.university || "";
+        document.getElementById("country").value = state.personal.country || "";
+        document.getElementById("linkedin").value = state.personal.linkedin || "";
+        document.getElementById("summary").value = state.summary || "";
+        document.getElementById("customSoftSkill").value = state.customSoftSkill || "";
+      }
+
+      function wireButtonsAndDynamicAdds() {
+        document.getElementById("addEducationBtn").addEventListener("click", () => {
+          addEducationEntry();
+          saveState();
+          updateCompleteness();
+          renderPreview();
+        });
+
+        document.getElementById("addProjectBtn").addEventListener("click", () => {
+          addProjectEntry();
+          saveState();
+          updateCompleteness();
+          renderPreview();
+        });
+
+        document.getElementById("addLanguageBtn").addEventListener("click", () => {
+          addLanguageEntry();
+          saveState();
+          updateCompleteness();
+          renderPreview();
+        });
+
+        document.getElementById("customSkillInput").addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          const val = e.target.value.trim();
+          if (!val) return;
+          if (!state.technicalSkills.includes(val)) state.technicalSkills.push(val);
+          e.target.value = "";
+          saveState();
+          renderSkillsMatrix();
+          renderSelectedSkills();
+          updateCompleteness();
+          renderPreview();
+        });
+
+        document.getElementById("customSoftSkill").addEventListener("input", (e) => {
+          state.customSoftSkill = e.target.value;
+          saveState();
+          updateCompleteness();
+          renderPreview();
+        });
+
+        document.getElementById("startSubmissionBtn").addEventListener("click", runSubmissionSequence);
+      }
+
+      function typewriterIntro() {
+        const el = document.getElementById("typewriterText");
+        const message = "Attention, Candidate. MARS-1 Central Command is expanding its specialist workforce. Your colony performance data has flagged you as a potential asset. You have 90:00 to complete and submit your application. The transmission window closes automatically. Begin now.";
+        let i = 0;
+        clearInterval(typewriterInterval);
+        typewriterInterval = setInterval(() => {
+          el.textContent = message.slice(0, i);
+          i++;
+          if (i > message.length) clearInterval(typewriterInterval);
+        }, 20);
+      }
+
+      function ensureTimer() {
+        let meta;
+        try {
+          meta = JSON.parse(localStorage.getItem(TIMER_KEY) || "null");
+        } catch {
+          meta = null;
+        }
+
+        if (!meta || !meta.startedAt) {
+          meta = { startedAt: Date.now() };
+          localStorage.setItem(TIMER_KEY, JSON.stringify(meta));
+        }
+
+        function tick() {
+          const now = Date.now();
+          const elapsed = Math.floor((now - meta.startedAt) / 1000);
+          const remaining = Math.max(0, TOTAL_SECONDS - elapsed);
+          const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+          const ss = String(remaining % 60).padStart(2, "0");
+          timerChip.textContent = `${mm}:${ss}`;
+          timerChip.classList.remove("warn", "danger");
+
+          if (remaining <= 300) timerChip.classList.add("danger");
+          else if (remaining <= 600) timerChip.classList.add("warn");
+
+          expiredOverlay.classList.toggle("hidden", remaining > 0);
+        }
+
+        tick();
+        clearInterval(timerInterval);
+        timerInterval = setInterval(tick, 1000);
+      }
+
+      function hideTimerDuringSubmission(hide) {
+        timerChip.classList.toggle("hidden", hide);
+      }
+
+      function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function ensureDocxLibrary() {
+        if (window.docx) return Promise.resolve(true);
+        if (docxReadyPromise) return docxReadyPromise;
+
+        const candidates = [
+          "https://unpkg.com/docx@8.5.0/build/index.js",
+          "https://unpkg.com/docx@8.5.0/build/index.umd.js",
+          "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"
+        ];
+
+        docxReadyPromise = new Promise((resolve) => {
+          function alreadyLoaded(src) {
+            return Array.from(document.scripts).some((s) => s.src === src);
+          }
+
+          function tryLoad(index) {
+            if (window.docx) return resolve(true);
+            if (index >= candidates.length) return resolve(false);
+            const src = candidates[index];
+            if (alreadyLoaded(src)) {
+              setTimeout(() => tryLoad(index + 1), 250);
+              return;
+            }
+
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            script.onload = () => {
+              if (window.docx) resolve(true);
+              else tryLoad(index + 1);
+            };
+            script.onerror = () => tryLoad(index + 1);
+            document.head.appendChild(script);
+          }
+
+          tryLoad(0);
+        });
+
+        return docxReadyPromise;
+      }
+
+      async function cycleStatus(el, messages, intervalMs, totalMs) {
+        const started = Date.now();
+        let i = 0;
+        while (Date.now() - started < totalMs) {
+          el.classList.remove("show");
+          await wait(130);
+          el.textContent = messages[i % messages.length];
+          el.classList.add("show");
+          i++;
+          await wait(intervalMs);
+        }
+      }
+
+      async function runSubmissionSequence() {
+        submissionOverlay.classList.add("active");
+        hideTimerDuringSubmission(true);
+
+        submissionContent.innerHTML = `
+          <h2 style="margin:0;">Secure Transmission</h2>
+          <p class="subtle" style="margin-top:8px;">Uploading application package to Relay Station 7...</p>
+          <div class="upload-bar"><span id="uploadFill"></span></div>
+          <div id="uploadPct" style="margin-top:8px; font-weight:700; color:#c9e6ff;">0%</div>
+          <div id="status1" class="status-cycle"></div>
+        `;
+
+        const uploadFill = document.getElementById("uploadFill");
+        const uploadPct = document.getElementById("uploadPct");
+        const status1 = document.getElementById("status1");
+
+        const statusPromise1 = cycleStatus(status1, [
+          "Encrypting biometric data...",
+          "Attaching field operation logs...",
+          "Compressing academic record...",
+          "Authenticating Colony Unit ID...",
+          "Transmitting via Relay Station 7..."
+        ], 800, 3500);
+
+        const start = Date.now();
+        while (Date.now() - start < 3500) {
+          const p = Math.min(100, Math.floor(((Date.now() - start) / 3500) * 100));
+          uploadFill.style.width = `${p}%`;
+          uploadPct.textContent = `${p}%`;
+          await wait(100);
+        }
+        uploadFill.style.width = "100%";
+        uploadPct.textContent = "100%";
+        await statusPromise1;
+
+        submissionContent.innerHTML = `
+          <h2 style="margin:0;">Processing at MARS-1 HQ</h2>
+          <div class="planet" aria-hidden="true"></div>
+          <div id="status2" class="status-cycle show"></div>
+        `;
+        const status2 = document.getElementById("status2");
+        await cycleStatus(status2, [
+          "Application received by MARS-1 HQ.",
+          "Running AI competency scan...",
+          "Cross-referencing Colony Unit 7 performance data...",
+          "Parsing technical skill matrix...",
+          "Analysis in progress..."
+        ], 800, 4000);
+
+        submissionContent.innerHTML = `
+          <h2 style="margin:0 0 14px;">Assessment Matrix</h2>
+          <div class="assess-grid" id="assessGrid"></div>
+        `;
+        const assessGrid = document.getElementById("assessGrid");
+        const rows = [
+          "TECHNICAL PROFICIENCY",
+          "FIELD ADAPTABILITY",
+          "COMMUNICATION INDEX",
+          "MISSION READINESS"
+        ];
+
+        rows.forEach((label) => {
+          const val = Math.floor(Math.random() * 26) + 70;
+          const row = document.createElement("div");
+          row.className = "assess-row";
+          row.innerHTML = `
+            <div class="label"><span>${label}</span><span>${val}%</span></div>
+            <div class="meter"><span style="width:0%"></span></div>
+          `;
+          assessGrid.appendChild(row);
+          requestAnimationFrame(() => {
+            row.querySelector(".meter span").style.width = `${val}%`;
+          });
+        });
+
+        await wait(3000);
+
+        const now = new Date();
+        const dateString = now.toLocaleString();
+        const name = state.personal.fullName || "UNSPECIFIED CANDIDATE";
+        const spec = state.personal.specialisation || "UNSPECIFIED";
+        const unit = state.unitId || "UNIT-UNKNOWN";
+
+        const finalText = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MARS-1 CENTRAL COMMAND
+PRIORITY TRANSMISSION — CLASSIFIED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CANDIDATE: ${name}
+COLONY UNIT: ${unit}
+SPECIALISATION: ${spec}
+SUBMISSION TIMESTAMP: ${dateString}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PRELIMINARY ASSESSMENT: COMPLETE
+
+Your application has been reviewed by the 
+MARS-1 AI Screening Module (v4.7).
+
+Based on your academic profile, technical 
+competency matrix, and Colony Unit 7 
+performance data, you have been:
+
+>> SHORTLISTED 
+
+for the MARS-1 SPECIALIST EXPANSION 
+PROGRAMME — Recruitment Cycle 2031-B.
+
+You are hereby INVITED to attend a formal 
+interview with the MARS-1 HR Director.
+
+DATE: ${nextWeekDateText()} — exact scheduling TBC
+FORMAT: In-person, Mars Habitat Block C
+DURATION: Approximately 20 minutes
+
+Prepare to articulate your professional 
+identity and demonstrate mission readiness.
+
+Your colony is counting on you.
+
+— MARS-1 CENTRAL COMMAND
+   Earth-Mars Relay Division
+   Transmission End.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+        submissionContent.innerHTML = `
+          <h2 style="margin:0 0 12px;">HQ Response</h2>
+          <div id="terminal" class="terminal"></div>
+          <div id="finalActions" class="final-actions">
+            <button id="downloadDocxBtn" class="btn primary" type="button">DOWNLOAD APPLICATION (DOCX)</button>
+            <button id="reviewCvBtn" class="btn outline" type="button">REVIEW MY CV</button>
+          </div>
+        `;
+
+        const terminal = document.getElementById("terminal");
+        const finalActions = document.getElementById("finalActions");
+        let i = 0;
+
+        const revealButtons = () => finalActions.classList.add("show");
+        setTimeout(revealButtons, 3000);
+
+        await new Promise((resolve) => {
+          const interval = setInterval(() => {
+            terminal.textContent = finalText.slice(0, i);
+            terminal.scrollTop = terminal.scrollHeight;
+            i += 2;
+            if (i > finalText.length) {
+              clearInterval(interval);
+              revealButtons();
+              resolve();
+            }
+          }, 16);
+        });
+
+        document.getElementById("downloadDocxBtn").addEventListener("click", generateDocx);
+        document.getElementById("reviewCvBtn").addEventListener("click", () => {
+          submissionOverlay.classList.remove("active");
+          hideTimerDuringSubmission(false);
+          showSection(9);
+        });
+      }
+
+      function nextWeekDateText() {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+      }
+
+      async function generateDocx() {
+        const ready = await ensureDocxLibrary();
+        if (!ready || !window.docx) {
+          alert("DOCX library failed to load. Check internet connection for CDN access.");
+          return;
+        }
+
+        const { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType, BorderStyle } = window.docx;
+        const p = state.personal;
+        const softSkillsAll = [...state.softSkills, ...(state.customSoftSkill.trim() ? [state.customSoftSkill.trim()] : [])];
+
+        const children = [];
+
+        children.push(new Paragraph({
+          text: p.fullName || "Candidate Name",
+          heading: HeadingLevel.HEADING_1,
+          spacing: { after: 120 }
+        }));
+
+        children.push(new Paragraph({
+          children: [new TextRun({ text: `${state.unitId || "UNIT-UNKNOWN"} | ${p.specialisation || "Specialisation"} | ${p.email || "Email"}`, size: 20 })],
+          spacing: { after: 60 }
+        }));
+
+        if (p.linkedin) {
+          children.push(new Paragraph({
+            children: [new TextRun({ text: p.linkedin, size: 20 })],
+            spacing: { after: 60 }
+          }));
+        }
+
+        children.push(new Paragraph({
+          border: { bottom: { color: "BFCAD6", space: 1, style: BorderStyle.SINGLE, size: 6 } },
+          spacing: { after: 180 }
+        }));
+
+        function heading(text) {
+          children.push(new Paragraph({
+            children: [new TextRun({ text, bold: true, size: 24 })],
+            spacing: { before: 120, after: 80 }
+          }));
+        }
+
+        heading("Profile Statement");
+        children.push(new Paragraph({ text: state.summary || "N/A" }));
+
+        heading("Education");
+        if (state.education.length) {
+          state.education.forEach((e) => {
+            children.push(new Paragraph({ text: `${e.degree || "Degree"} — ${e.institution || "Institution"}`, bullet: { level: 0 } }));
+            children.push(new Paragraph({ text: `${e.startYear || "-"} - ${e.present ? "Present" : (e.endYear || "-")}${e.grade ? ` | Grade: ${e.grade}` : ""}`, indent: { left: 720 } }));
+            if (e.modules && e.modules.length) {
+              children.push(new Paragraph({ text: `Modules: ${e.modules.join(", ")}`, indent: { left: 720 } }));
+            }
+          });
+        } else {
+          children.push(new Paragraph({ text: "N/A" }));
+        }
+
+        heading("Field Operations Log");
+        if (state.projects.length) {
+          state.projects.forEach((pr) => {
+            children.push(new Paragraph({ text: `${pr.title || "Mission Entry"} (${pr.period || "Period"})`, bullet: { level: 0 } }));
+            children.push(new Paragraph({ text: `Role: ${pr.role || "-"}`, indent: { left: 720 } }));
+            children.push(new Paragraph({ text: pr.bullet || projectBulletPreview(pr), indent: { left: 720 } }));
+            if (pr.tools && pr.tools.length) {
+              children.push(new Paragraph({ text: `Tools: ${pr.tools.join(", ")}`, indent: { left: 720 } }));
+            }
+          });
+        } else {
+          children.push(new Paragraph({ text: "N/A" }));
+        }
+
+        heading("Technical Skills");
+        children.push(new Paragraph({ text: state.technicalSkills.length ? state.technicalSkills.join(", ") : "N/A" }));
+
+        heading("Languages");
+        if (state.languages.length) {
+          state.languages.forEach((l) => {
+            children.push(new Paragraph({ text: `${l.language || "Language"} — ${l.level || "-"}`, bullet: { level: 0 } }));
+          });
+        } else {
+          children.push(new Paragraph({ text: "N/A" }));
+        }
+
+        heading("Soft Skills");
+        children.push(new Paragraph({ text: softSkillsAll.length ? softSkillsAll.join(", ") : "N/A" }));
+
+        children.push(new Paragraph({
+          children: [new TextRun({ text: "Submitted via MARS-1 Career Portal, 2031", italics: true, size: 18, color: "6B7280" })],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 240 }
+        }));
+
+        const doc = new Document({
+          sections: [{ children }]
+        });
+
+        Packer.toBlob(doc).then((blob) => {
+          const fileName = `MARS1_Application_${(p.fullName || "Student_Name").trim().replace(/\s+/g, "_")}.docx`;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }).catch((err) => {
+          console.error(err);
+          alert("Unable to generate DOCX file.");
+        });
+      }
+
+      function initIntroAction() {
+        document.getElementById("accessPortalBtn").addEventListener("click", () => {
+          clearInterval(introCountdownInterval);
+          startApp();
+        });
+      }
+
+      function startIntroCountdown() {
+        const introEl = document.getElementById("introCountdown");
+        const introStart = Date.now();
+        clearInterval(introCountdownInterval);
+        const tick = () => {
+          const elapsed = Math.floor((Date.now() - introStart) / 1000);
+          const remaining = Math.max(0, TOTAL_SECONDS - elapsed);
+          const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+          const ss = String(remaining % 60).padStart(2, "0");
+          introEl.textContent = `${mm}:${ss}`;
+          if (remaining <= 0) clearInterval(introCountdownInterval);
+        };
+        tick();
+        introCountdownInterval = setInterval(tick, 1000);
+      }
+
+      function initDataLists() {
+        const dl = document.createElement("datalist");
+        dl.id = "languageSuggestions";
+        ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Arabic", "Russian", "Chinese", "Japanese", "Other"].forEach((l) => {
+          const opt = document.createElement("option");
+          opt.value = l;
+          dl.appendChild(opt);
+        });
+        document.body.appendChild(dl);
+      }
+
+      function initGlobalAutosave() {
+        document.body.addEventListener("input", () => {
+          saveState();
+        });
+      }
+
+      function init() {
+        loadState();
+        currentStep = Math.min(10, Math.max(2, Number(state.currentStep) || 2));
+        ensureUnitId();
+        buildStepper();
+        wirePersonalFields();
+        wireSummary();
+
+        if (!state.education.length) addEducationEntry();
+        else renderEducation();
+
+        if (!state.projects.length) addProjectEntry();
+        else renderProjects();
+
+        renderSkillsMatrix();
+        renderSelectedSkills();
+        renderLanguages();
+        renderSoftSkills();
+        restoreInputsFromState();
+        wireButtonsAndDynamicAdds();
+        setupNavigation();
+        initIntroAction();
+        initDataLists();
+        initGlobalAutosave();
+        typewriterIntro();
+        startIntroCountdown();
+        ensureDocxLibrary();
+
+        updateCompleteness();
+        renderPreview();
+
+        if (state.appStarted) {
+          startApp();
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
