@@ -656,10 +656,7 @@
     }
 
     .preview-shell {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 14px;
-      align-items: start;
+      display: block;
     }
 
     .cv-card {
@@ -670,6 +667,7 @@
       min-height: 420px;
       position: relative;
       border: 1px solid #d9e4ef;
+      width: 100%;
     }
 
     .cv-watermark {
@@ -1312,9 +1310,6 @@
             </div>
             <div class="preview-shell">
               <div class="cv-card" id="cvPreview"></div>
-              <aside class="preview-side">
-                <div class="preview-mini" id="livePanel"></div>
-              </aside>
             </div>
 
             <div class="nav">
