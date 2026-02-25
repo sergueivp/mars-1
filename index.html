@@ -1089,6 +1089,7 @@
       margin: 4px auto 8px;
       display: grid;
       place-items: center;
+      animation: marsFloat 6.2s ease-in-out infinite;
     }
 
     .planet {
@@ -1097,29 +1098,25 @@
       border-radius: 50%;
       position: relative;
       overflow: hidden;
-      background: radial-gradient(130% 120% at 28% 24%, #ffd9bf 0%, #f9a570 20%, #e26a2c 44%, #a7431d 70%, #652915 100%);
+      background-color: #1a1310;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       box-shadow:
         0 0 38px rgba(232, 86, 10, 0.28),
         inset 14px 10px 18px rgba(255, 209, 174, 0.24),
         inset -16px -18px 28px rgba(44, 14, 7, 0.5);
-      animation: marsFloat 6.2s ease-in-out infinite;
+      border: 1px solid rgba(255, 168, 120, 0.4);
+      animation: marsSpin 18s linear infinite;
     }
 
     .planet::before {
       content: "";
       position: absolute;
-      inset: -8%;
+      inset: 0;
       border-radius: 50%;
-      background:
-        radial-gradient(30% 24% at 72% 28%, rgba(109, 40, 19, 0.45) 0 70%, transparent 73%),
-        radial-gradient(34% 28% at 30% 58%, rgba(151, 60, 27, 0.42) 0 66%, transparent 70%),
-        radial-gradient(24% 18% at 58% 70%, rgba(91, 31, 14, 0.35) 0 70%, transparent 73%),
-        radial-gradient(26% 20% at 44% 26%, rgba(205, 100, 53, 0.27) 0 72%, transparent 75%),
-        radial-gradient(28% 22% at 84% 62%, rgba(82, 27, 12, 0.38) 0 68%, transparent 71%),
-        radial-gradient(34% 30% at 14% 20%, rgba(228, 130, 79, 0.22) 0 66%, transparent 70%);
-      mix-blend-mode: multiply;
-      opacity: 0.9;
-      animation: marsTextureDrift 13s linear infinite;
+      background: radial-gradient(120% 120% at 84% 78%, rgba(5, 2, 1, 0.62), transparent 56%);
+      pointer-events: none;
     }
 
     .planet::after {
@@ -1152,10 +1149,9 @@
       50% { transform: translateY(-4px); }
     }
 
-    @keyframes marsTextureDrift {
-      0% { transform: translateX(-7%) scale(1.04); }
-      50% { transform: translateX(7%) scale(1.08); }
-      100% { transform: translateX(-7%) scale(1.04); }
+    @keyframes marsSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
     @keyframes hqWavePulse {
@@ -2949,6 +2945,11 @@
           </div>
           <div id="status2" class="status-cycle show"></div>
         `;
+        const processingPlanet = submissionContent.querySelector(".planet");
+        const logoPlanet = document.querySelector(".mars-logo");
+        if (processingPlanet && logoPlanet) {
+          processingPlanet.style.backgroundImage = getComputedStyle(logoPlanet).backgroundImage;
+        }
         const status2 = document.getElementById("status2");
         await cycleStatus(status2, [
           "Application received by MARS-1 HQ.",
