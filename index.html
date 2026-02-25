@@ -120,16 +120,9 @@
     }
 
     .progress-stepper {
-      background: rgba(20, 28, 46, 0.82);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
       display: grid;
-      grid-template-columns: repeat(10, minmax(72px, 1fr));
+      grid-template-columns: 1fr;
       gap: 8px;
-      overflow-x: auto;
-      backdrop-filter: blur(6px);
     }
 
     .step-pill {
@@ -157,12 +150,15 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 250px minmax(0, 1fr) 320px;
+      grid-template-columns: 230px minmax(0, 1fr) 300px;
       gap: 16px;
       align-items: start;
     }
 
+    .phase-rail,
+    .right-rail,
     .sidebar,
+    .live-sidebar,
     .panel {
       background: rgba(20, 28, 46, 0.86);
       border: 1px solid var(--border);
@@ -171,15 +167,32 @@
       backdrop-filter: blur(8px);
     }
 
-    .live-sidebar {
+    .phase-rail {
       position: sticky;
       top: 84px;
+      padding: 12px;
+    }
+
+    .phase-rail h3 {
+      margin: 0 0 10px;
+      font-size: 0.88rem;
+      color: #d9e6f2;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .right-rail {
+      position: sticky;
+      top: 84px;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      background: rgba(12, 18, 33, 0.85);
+    }
+
+    .live-sidebar {
       padding: 14px;
-      background: rgba(20, 28, 46, 0.86);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      min-height: 240px;
+      min-height: 220px;
     }
 
     .live-sidebar h3 {
@@ -190,8 +203,6 @@
     }
 
     .sidebar {
-      position: sticky;
-      top: 84px;
       padding: 16px;
     }
 
@@ -1056,6 +1067,8 @@
         grid-template-columns: 1fr;
       }
 
+      .phase-rail,
+      .right-rail,
       .sidebar {
         position: relative;
         top: 0;
@@ -1080,10 +1093,6 @@
       .split-input,
       .lang-row {
         grid-template-columns: 1fr;
-      }
-
-      .progress-stepper {
-        grid-template-columns: repeat(10, minmax(130px, 1fr));
       }
 
       .timer-chip {
@@ -1118,14 +1127,10 @@
 
   <div id="mainApp" class="main-app">
     <div class="app-shell">
-      <div id="stepper" class="progress-stepper" aria-label="Progress steps"></div>
-
       <div class="layout">
-        <aside class="sidebar" aria-label="Profile completeness">
-          <h3>Profile Completeness</h3>
-          <div id="completionPct" class="completion">0%</div>
-          <div class="bar" aria-hidden="true"><span id="completionBar"></span></div>
-          <p>Complete all sections to maximize mission readiness. Your data syncs locally on every change.</p>
+        <aside class="phase-rail" aria-label="Application phases">
+          <h3>Mission Phases</h3>
+          <div id="stepper" class="progress-stepper" aria-label="Progress steps"></div>
         </aside>
 
         <main class="panel" id="panelRoot">
@@ -1331,9 +1336,21 @@
           </section>
         </main>
 
-        <aside class="live-sidebar" aria-label="Live profile preview">
-          <h3>Live Profile Preview</h3>
-          <div class="preview-mini" id="globalLivePanel"></div>
+        <aside class="right-rail" aria-label="Status and preview">
+          <div class="mars-card" aria-label="MARS-1 rotating insignia">
+            <div class="mars-logo" aria-hidden="true"></div>
+            <div class="mars-label"><strong>MARS-1</strong>Orbital Relay Signal<br>Active</div>
+          </div>
+          <div class="sidebar" aria-label="Profile completeness">
+            <h3>Profile Completeness</h3>
+            <div id="completionPct" class="completion">0%</div>
+            <div class="bar" aria-hidden="true"><span id="completionBar"></span></div>
+            <p>Complete all sections to maximize mission readiness. Your data syncs locally on every change.</p>
+          </div>
+          <div class="live-sidebar" aria-label="Live profile preview">
+            <h3>Live Profile Preview</h3>
+            <div class="preview-mini" id="globalLivePanel"></div>
+          </div>
         </aside>
       </div>
     </div>
@@ -2754,3 +2771,47 @@ Your colony is counting on you.
   </script>
 </body>
 </html>
+    .mars-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(16, 27, 45, 0.9), rgba(8, 14, 27, 0.94));
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mars-logo {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      position: relative;
+      background: radial-gradient(circle at 32% 30%, #ffbb91, #e8560a 46%, #6b2e13 75%);
+      animation: spin 7s linear infinite;
+      box-shadow: 0 0 18px rgba(232, 86, 10, 0.34);
+      flex-shrink: 0;
+    }
+
+    .mars-logo::before {
+      content: "";
+      position: absolute;
+      inset: -7px;
+      border-radius: 50%;
+      border: 2px solid rgba(14, 165, 233, 0.46);
+      border-left-color: transparent;
+      border-right-color: transparent;
+      transform: rotate(24deg);
+    }
+
+    .mars-label {
+      font-size: 0.86rem;
+      color: #d6ecff;
+      line-height: 1.35;
+    }
+
+    .mars-label strong {
+      display: block;
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      color: #ffab74;
+    }
